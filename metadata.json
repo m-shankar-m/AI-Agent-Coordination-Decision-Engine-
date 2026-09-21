@@ -1,0 +1,6 @@
+{
+  "name": "Banking Multi-Agent Decision Engine",
+  "description": "Enterprise AI-powered multi-agent banking onboarding, risk analysis, KYC verification, and automated decision platform with human-in-the-loop oversight.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
