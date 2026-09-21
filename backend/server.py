@@ -360,6 +360,19 @@ def get_reviews():
 
 @app.post("/api/v1/reviews/{application_id}/decision")
 def submit_review_decision(application_id: str, payload: Dict[str, Any]):
+    global SEED_PENDING_REVIEWS
+    SEED_PENDING_REVIEWS = [r for r in SEED_PENDING_REVIEWS if r["application_id"] != application_id]
+    
+    # Also update the application status in SEED_APPLICATIONS
+    for app in SEED_APPLICATIONS:
+        if app["id"] == application_id:
+            action = payload.get("action", "")
+            if action == "APPROVE":
+                app["status"] = "APPROVED"
+            elif action == "REJECT":
+                app["status"] = "REJECTED"
+            break
+            
     return {"status": "success", "application_id": application_id}
 
 @app.post("/api/v1/simulation/toggle-external-failure")
@@ -544,6 +557,23 @@ async def stream_workflow(workflow_id: str):
             }
             yield f"data: {json.dumps({'type': 'TOOL_CALLED', 'data': tool_call})}\n\n"
             yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
+            
+            if agent_name == "Decision Agent" and result.get("decision") == "HUMAN_REVIEW_RECOMMENDED":
+                state["workflow_status"] = "PAUSED_FOR_REVIEW"
+                state["human_review_required"] = True
+                review_reason = result.get("reasons", ["Requires manual review"])[0] if result.get("reasons") else "Requires manual review"
+                state["review_reason"] = review_reason
+                
+                # Add to global review queue
+                SEED_PENDING_REVIEWS.append({
+                    "application_id": state.get("application_id", "APP-UNKNOWN"),
+                    "reason": review_reason,
+                    "created_at": datetime.utcnow().isoformat() + "Z",
+                    "priority": "HIGH"
+                })
+                
+                yield f"data: {json.dumps({'type': 'HUMAN_REVIEW_TRIGGERED', 'data': {'reason': review_reason}})}\n\n"
+                return
             
         await asyncio.sleep(1.0)
         state["workflow_status"] = "COMPLETED"
