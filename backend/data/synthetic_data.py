@@ -196,4 +196,7 @@ class SyntheticDataService:
                 return s
         return self.scenarios[0]
 
+    def add_scenario(self, scenario: Dict[str, Any]):
+        self.scenarios.insert(0, scenario)
+
 synthetic_data_service = SyntheticDataService()

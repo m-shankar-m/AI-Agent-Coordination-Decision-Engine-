@@ -37,6 +37,7 @@ interface ApplicationLauncherProps {
   onSimulateOutageToggle: (enableFailure: boolean) => void;
   isOutageActive: boolean;
   isLoading?: boolean;
+  onApplicationCreated?: () => void;
 }
 
 export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
@@ -51,6 +52,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
   onSimulateOutageToggle,
   isOutageActive,
   isLoading,
+  onApplicationCreated,
 }) => {
   const [filterScenario, setFilterScenario] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -246,6 +248,9 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       if (resp.ok) {
         const created = await resp.json();
         setShowCreateModal(false);
+        if (onApplicationCreated) {
+          onApplicationCreated();
+        }
         onSelectApplication(created.id);
         onLaunchWorkflow(created.id);
       } else {

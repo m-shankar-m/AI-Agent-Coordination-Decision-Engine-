@@ -343,6 +343,7 @@ export default function App() {
             onBulkSeed={handleBulkSeed}
             onSimulateOutageToggle={handleToggleOutage}
             isOutageActive={isOutageActive}
+            onApplicationCreated={() => fetchApplications(currentPage)}
           />
         )}
 

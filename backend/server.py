@@ -370,11 +370,16 @@ def toggle_external_failure(payload: Dict[str, Any]):
 def seed_data(payload: Dict[str, Any]):
     return {"status": "success", "count": payload.get("count", 0)}
 
+from backend.data.synthetic_data import synthetic_data_service
+
 @app.post("/api/v1/applications")
 def create_application(payload: Dict[str, Any]):
+    app_id = f"APP-2026-CUST-{int(time.time())}"
+    cust_id = f"cust-syn-{int(time.time())}"
+    
     new_app = {
-        "id": f"APP-2026-CUST-{int(time.time())}",
-        "customer_id": f"cust-syn-{int(time.time())}",
+        "id": app_id,
+        "customer_id": cust_id,
         "product_type": payload.get("product_type", "UNKNOWN"),
         "status": "SUBMITTED",
         "customer_name": payload.get("customer_name", "Unknown"),
@@ -386,6 +391,55 @@ def create_application(payload: Dict[str, Any]):
         "scenario": payload.get("scenario", "LOW_RISK"),
         "is_synthetic": True,
     }
+    
+    new_customer = {
+        "id": cust_id,
+        "full_name": payload.get("customer_name", "Unknown"),
+        "date_of_birth": payload.get("dob", "1990-01-01"),
+        "email": payload.get("email", ""),
+        "phone": payload.get("phone", ""),
+        "address": {
+            "street": payload.get("address", ""),
+            "city": "Unknown",
+            "state": "XX",
+            "postal_code": "00000",
+            "country": "United States"
+        },
+        "employment_status": payload.get("employment_status", "EMPLOYED"),
+        "employer_name": payload.get("employer_name", ""),
+        "annual_income": payload.get("annual_income", 0),
+        "monthly_expenses": payload.get("monthly_expenses", 0),
+        "declared_id_type": payload.get("id_type", "PASSPORT"),
+        "declared_id_number": payload.get("id_number", ""),
+        "nationality": "United States",
+        "pep_status": payload.get("pep_status", False),
+        "existing_customer": False,
+        "is_synthetic": True,
+        "credit_score": payload.get("credit_score", 700)
+    }
+    
+    new_doc = {
+        "id": f"doc-{cust_id}",
+        "document_type": "IDENTITY_DOCUMENT",
+        "file_name": "custom_doc.pdf",
+        "extracted_name": payload.get("customer_name", "Unknown"),
+        "extracted_dob": payload.get("dob", "1990-01-01"),
+        "extracted_id_number": payload.get("id_number", ""),
+        "issue_date": "2020-01-01",
+        "expiry_date": "2030-01-01",
+        "issuing_authority": "Custom",
+        "tamper_flags_detected": payload.get("tamper_flags_detected", False),
+        "blur_score": 0.05 if not payload.get("has_document_mismatch") else 0.5,
+        "is_synthetic": True,
+    }
+    
+    scenario_obj = {
+        "customer": new_customer,
+        "application": new_app,
+        "documents": [new_doc]
+    }
+    
+    synthetic_data_service.add_scenario(scenario_obj)
     SEED_APPLICATIONS.insert(0, new_app)
     return new_app
 
@@ -421,14 +475,56 @@ async def stream_workflow(workflow_id: str):
             
         yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
         
+        customer_data = state.get("customer_data", {})
+        documents = state.get("documents", [{}])
+        doc = documents[0] if documents else {}
+        
+        # Extract variables
+        c_score = customer_data.get("credit_score", 750)
+        c_pep = customer_data.get("pep_status", False)
+        c_tamper = doc.get("tamper_flags_detected", False)
+        c_mismatch = doc.get("blur_score", 0.05) > 0.4
+        
+        # Calculate Risk Agent output
+        risk_level = "LOW"
+        if c_score < 600:
+            risk_level = "HIGH"
+        elif c_score < 700:
+            risk_level = "MEDIUM"
+            
+        # Calculate Fraud Agent output
+        fraud_risk = "LOW"
+        fraud_score = 10
+        if c_tamper:
+            fraud_risk = "HIGH"
+            fraud_score = 95
+        
+        # Decision Agent output
+        if fraud_risk == "HIGH" or c_pep:
+            decision = "REJECTION_RECOMMENDATION"
+            decision_conf = 0.99
+            decision_reason = "Fraud flags detected or PEP match."
+        elif risk_level == "HIGH":
+            decision = "REJECTION_RECOMMENDATION"
+            decision_conf = 0.90
+            decision_reason = f"Poor credit score ({c_score})."
+        elif risk_level == "MEDIUM" or c_mismatch:
+            decision = "HUMAN_REVIEW_RECOMMENDED"
+            decision_conf = 0.85
+            decision_reason = "Moderate risk or document mismatch."
+        else:
+            decision = "APPROVAL_RECOMMENDATION"
+            decision_conf = 0.95
+            decision_reason = "Low risk profile."
+
         steps = [
-            ("Document Agent", 2, "verify_document", {"status": "VERIFIED", "confidence": 0.98, "name_match": True, "dob_match": True, "is_synthetic": True}),
-            ("KYC Agent", 3, "verify_identity", {"status": "VERIFIED", "sanctions_cleared": True, "pep_identified": False, "details": "Identity verified successfully", "is_synthetic": True}),
-            ("Risk Agent", 4, "calculate_risk", {"risk_level": "LOW", "credit_score": 750, "debt_to_income_ratio": 25, "explanation": "Low risk profile", "is_synthetic": True}),
-            ("Fraud Agent", 5, "check_fraud_indicators", {"fraud_risk": "LOW", "fraud_score": 10, "duplicate_detected": False, "suspicious_indicators": [], "is_synthetic": True}),
+            ("Document Agent", 2, "verify_document", {"status": "VERIFIED" if not c_mismatch else "MISMATCH", "confidence": 0.98 if not c_mismatch else 0.4, "name_match": not c_mismatch, "dob_match": True, "is_synthetic": True}),
+            ("KYC Agent", 3, "verify_identity", {"status": "VERIFIED" if not c_pep else "FLAGGED", "sanctions_cleared": True, "pep_identified": c_pep, "details": "Identity check complete", "is_synthetic": True}),
+            ("Risk Agent", 4, "calculate_risk", {"risk_level": risk_level, "credit_score": c_score, "debt_to_income_ratio": 25, "explanation": f"{risk_level.title()} risk profile", "is_synthetic": True}),
+            ("Fraud Agent", 5, "check_fraud_indicators", {"fraud_risk": fraud_risk, "fraud_score": fraud_score, "duplicate_detected": False, "suspicious_indicators": ["Tampering"] if c_tamper else [], "is_synthetic": True}),
             ("Compliance Agent", 6, "check_compliance", {"status": "PASS", "policy_rules_applied": ["KYC-01", "AML-02"], "compliance_notes": "Compliant", "is_synthetic": True}),
-            ("Decision Agent", 7, "create_audit_record", {"decision": "APPROVAL_RECOMMENDATION", "confidence": 0.95, "reasons": [], "supporting_factors": ["High income", "Good credit"], "data_sources": ["Synthetic KYC", "Bureau"], "timestamp": datetime.utcnow().isoformat() + "Z"}),
-            ("Response Agent", 8, "send_notification", {"customer_message": "Your application has been approved.", "internal_summary": "Auto-approved based on low risk.", "notification_dispatched": True})
+            ("Decision Agent", 7, "create_audit_record", {"decision": decision, "confidence": decision_conf, "reasons": [decision_reason] if decision_reason else [], "supporting_factors": [], "data_sources": ["Synthetic KYC", "Bureau"], "timestamp": datetime.utcnow().isoformat() + "Z"}),
+            ("Response Agent", 8, "send_notification", {"customer_message": f"Your application is {decision.split('_')[0].lower()}.", "internal_summary": decision_reason, "notification_dispatched": True})
         ]
         
         result_keys = ["document_result", "kyc_result", "risk_result", "fraud_result", "compliance_result", "decision_result", "response_result"]
