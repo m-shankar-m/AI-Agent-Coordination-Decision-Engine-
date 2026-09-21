@@ -358,9 +358,40 @@ def get_reviews():
         "history": []
     }
 
+@app.post("/api/v1/reviews/{application_id}/decision")
+def submit_review_decision(application_id: str, payload: Dict[str, Any]):
+    return {"status": "success", "application_id": application_id}
+
+@app.post("/api/v1/simulation/toggle-external-failure")
+def toggle_external_failure(payload: Dict[str, Any]):
+    return {"forced_failure_active": payload.get("enable_failure", False)}
+
+@app.post("/api/v1/seed")
+def seed_data(payload: Dict[str, Any]):
+    return {"status": "success", "count": payload.get("count", 0)}
+
+@app.post("/api/v1/applications")
+def create_application(payload: Dict[str, Any]):
+    new_app = {
+        "id": f"APP-2026-CUST-{int(time.time())}",
+        "customer_id": f"cust-syn-{int(time.time())}",
+        "product_type": payload.get("product_type", "UNKNOWN"),
+        "status": "SUBMITTED",
+        "customer_name": payload.get("customer_name", "Unknown"),
+        "customer_email": payload.get("email", ""),
+        "annual_income": payload.get("annual_income", 0),
+        "requested_credit_limit": payload.get("requested_credit_limit", 0),
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+        "scenario": payload.get("scenario", "LOW_RISK"),
+        "is_synthetic": True,
+    }
+    SEED_APPLICATIONS.insert(0, new_app)
+    return new_app
+
 from backend.tools.tool_registry import banking_tools
 from backend.agents import agent_fleet
-from workflows.multi_agent_engine import multi_agent_engine
+from backend.workflows.multi_agent_engine import multi_agent_engine
 
 @app.get("/api/v1/agents")
 def get_agents():
@@ -379,6 +410,57 @@ def get_tools():
 def start_workflow(payload: Dict[str, Any]):
     app_id = payload.get("application_id", "APP-2026-001")
     return multi_agent_engine.start_workflow(app_id)
+
+@app.get("/api/v1/workflows/{workflow_id}/stream")
+async def stream_workflow(workflow_id: str):
+    async def event_generator():
+        state = multi_agent_engine.get_workflow_state(workflow_id)
+        if not state:
+            yield f"data: {json.dumps({'error': 'Workflow not found'})}\n\n"
+            return
+            
+        yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
+        
+        steps = [
+            ("Document Agent", 2, "verify_document", {"status": "VERIFIED", "confidence": 0.98, "name_match": True, "dob_match": True, "is_synthetic": True}),
+            ("KYC Agent", 3, "verify_identity", {"status": "VERIFIED", "sanctions_cleared": True, "pep_identified": False, "details": "Identity verified successfully", "is_synthetic": True}),
+            ("Risk Agent", 4, "calculate_risk", {"risk_level": "LOW", "credit_score": 750, "debt_to_income_ratio": 25, "explanation": "Low risk profile", "is_synthetic": True}),
+            ("Fraud Agent", 5, "check_fraud_indicators", {"fraud_risk": "LOW", "fraud_score": 10, "duplicate_detected": False, "suspicious_indicators": [], "is_synthetic": True}),
+            ("Compliance Agent", 6, "check_compliance", {"status": "PASS", "policy_rules_applied": ["KYC-01", "AML-02"], "compliance_notes": "Compliant", "is_synthetic": True}),
+            ("Decision Agent", 7, "create_audit_record", {"decision": "APPROVAL_RECOMMENDATION", "confidence": 0.95, "reasons": [], "supporting_factors": ["High income", "Good credit"], "data_sources": ["Synthetic KYC", "Bureau"], "timestamp": datetime.utcnow().isoformat() + "Z"}),
+            ("Response Agent", 8, "send_notification", {"customer_message": "Your application has been approved.", "internal_summary": "Auto-approved based on low risk.", "notification_dispatched": True})
+        ]
+        
+        result_keys = ["document_result", "kyc_result", "risk_result", "fraud_result", "compliance_result", "decision_result", "response_result"]
+        
+        for idx, (agent_name, step_num, tool_name, result) in enumerate(steps):
+            await asyncio.sleep(1.0)
+            state["current_agent"] = agent_name
+            state["current_step"] = step_num
+            state[result_keys[idx]] = result
+            
+            tool_call = {
+                "id": f"tc-{int(time.time()*1000)}-{idx}",
+                "tool_name": tool_name,
+                "agent_name": agent_name,
+                "input_hash": f"hash-{int(time.time())}",
+                "execution_time_ms": 150 + (int(time.time()) % 100)
+            }
+            yield f"data: {json.dumps({'type': 'TOOL_CALLED', 'data': tool_call})}\n\n"
+            yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
+            
+        await asyncio.sleep(1.0)
+        state["workflow_status"] = "COMPLETED"
+        yield f"data: {json.dumps({'type': 'WORKFLOW_COMPLETED'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.get("/api/v1/workflows/{workflow_id}")
+def get_workflow(workflow_id: str):
+    state = multi_agent_engine.get_workflow_state(workflow_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return state
 
 @app.get("/api/v1/realtime-data")
 def get_realtime_data():
