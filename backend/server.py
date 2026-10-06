@@ -10,21 +10,24 @@ from backend.db import mongo
 
 @app.on_event("startup")
 async def startup_db():
-    await mongo.seed_mongodb_if_empty()
-    
-    global SEED_APPLICATIONS, SEED_PENDING_REVIEWS, SEED_AUDIT_LOGS
-    
-    apps = await mongo.applications_col.find().sort("_id", -1).to_list(1000)
-    for a in apps: a.pop("_id", None)
-    if apps: SEED_APPLICATIONS[:] = apps
+    try:
+        await mongo.seed_mongodb_if_empty()
         
-    reviews = await mongo.reviews_col.find().sort("_id", -1).to_list(1000)
-    for r in reviews: r.pop("_id", None)
-    if reviews: SEED_PENDING_REVIEWS[:] = reviews
+        global SEED_APPLICATIONS, SEED_PENDING_REVIEWS, SEED_AUDIT_LOGS
         
-    logs = await mongo.audit_logs_col.find().sort("_id", -1).to_list(1000)
-    for l in logs: l.pop("_id", None)
-    if logs: SEED_AUDIT_LOGS[:] = logs
+        apps = await mongo.applications_col.find().sort("_id", -1).to_list(1000)
+        for a in apps: a.pop("_id", None)
+        if apps: SEED_APPLICATIONS[:] = apps
+            
+        reviews = await mongo.reviews_col.find().sort("_id", -1).to_list(1000)
+        for r in reviews: r.pop("_id", None)
+        if reviews: SEED_PENDING_REVIEWS[:] = reviews
+            
+        logs = await mongo.audit_logs_col.find().sort("_id", -1).to_list(1000)
+        for l in logs: l.pop("_id", None)
+        if logs: SEED_AUDIT_LOGS[:] = logs
+    except Exception as e:
+        print(f"MongoDB connection failed on startup: {e}")
 from typing import List, Dict, Optional, Any
 import asyncio
 import json
