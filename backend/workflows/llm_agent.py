@@ -39,7 +39,8 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
     
     for api_key in api_keys:
         try:
-            llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.1, google_api_key=api_key, max_retries=0)
+            # Added max_retries=2 to gracefully handle temporary 503 overloaded errors
+            llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.1, google_api_key=api_key, max_retries=2)
             structured_llm = llm.with_structured_output(DecisionOutput)
             
             system_prompt = (
