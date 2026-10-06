@@ -33,6 +33,9 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
     
     last_error = None
     import asyncio
+    import random
+    
+    random.shuffle(api_keys)
     
     for api_key in api_keys:
         retries = 3
