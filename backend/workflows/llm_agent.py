@@ -35,7 +35,7 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
     
     for api_key in api_keys:
         try:
-            llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.1, google_api_key=api_key, max_retries=0, timeout=10)
+            llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.1, google_api_key=api_key)
             structured_llm = llm.with_structured_output(DecisionOutput)
             
             system_prompt = (
@@ -67,5 +67,5 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
     return {
         "decision": "HUMAN_REVIEW_RECOMMENDED",
         "confidence": 0.0,
-        "reason": f"LLM Error (All {len(api_keys)} keys failed): {str(last_error)}"
+        "reason": f"LLM Error (All {len(api_keys)} keys failed): {repr(last_error)}"
     }
