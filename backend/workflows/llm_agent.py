@@ -32,37 +32,45 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
         }
     
     last_error = None
+    import asyncio
     
     for api_key in api_keys:
-        try:
-            llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", temperature=0.1, google_api_key=api_key)
-            structured_llm = llm.with_structured_output(DecisionOutput)
-            
-            system_prompt = (
-                "You are an expert AI Banking Underwriter. "
-                "Evaluate the provided customer profile and identity documents. "
-                "Determine if the application should be approved, rejected, or sent for human review. "
-                "Rules:\n"
-                "- If credit score < 600 or PEP status is true or document is tampered -> REJECT.\n"
-                "- If credit score is 600-700 or document has high blur score or document mismatch is true -> HUMAN REVIEW.\n"
-                "- Otherwise -> APPROVE."
-            )
-            
-            human_prompt = f"Customer Data: {customer_data}\n\nDocuments: {documents}"
-            
-            result = await structured_llm.ainvoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=human_prompt)
-            ])
-            
-            return {
-                "decision": result.decision,
-                "confidence": result.confidence,
-                "reason": result.reason
-            }
-        except Exception as e:
-            last_error = e
-            continue
+        retries = 3
+        for attempt in range(retries):
+            try:
+                llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", temperature=0.1, google_api_key=api_key)
+                structured_llm = llm.with_structured_output(DecisionOutput)
+                
+                system_prompt = (
+                    "You are an expert AI Banking Underwriter. "
+                    "Evaluate the provided customer profile and identity documents. "
+                    "Determine if the application should be approved, rejected, or sent for human review. "
+                    "Rules:\n"
+                    "- If credit score < 600 or PEP status is true or document is tampered -> REJECT.\n"
+                    "- If credit score is 600-700 or document has high blur score or document mismatch is true -> HUMAN REVIEW.\n"
+                    "- Otherwise -> APPROVE."
+                )
+                
+                human_prompt = f"Customer Data: {customer_data}\n\nDocuments: {documents}"
+                
+                result = await structured_llm.ainvoke([
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=human_prompt)
+                ])
+                
+                return {
+                    "decision": result.decision,
+                    "confidence": result.confidence,
+                    "reason": result.reason
+                }
+            except Exception as e:
+                last_error = e
+                error_msg = str(e)
+                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                    if attempt < retries - 1:
+                        await asyncio.sleep(12) # Wait to respect free tier quotas
+                        continue
+                break # move to the next api key if not a rate limit error or exhausted attempts
             
     return {
         "decision": "HUMAN_REVIEW_RECOMMENDED",
