@@ -50,7 +50,7 @@ export const AgentObservability: React.FC<AgentObservabilityProps> = ({
               Multi-Agent Fleet Status ({agents.length} Specialized Agents)
             </h3>
             <p className="text-xs text-slate-500">
-              Autonomous agents coordinated via LangGraph shared state DAG architecture
+              
             </p>
           </div>
 

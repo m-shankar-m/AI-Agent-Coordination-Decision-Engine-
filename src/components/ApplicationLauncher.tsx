@@ -269,7 +269,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Demonstration Scenarios (1-Click Multi-Agent Execution)
+              Demonstration Scenarios
             </h3>
             <p className="text-xs text-slate-500">
               Select any pre-configured enterprise scenario to trigger the autonomous LangGraph workflow

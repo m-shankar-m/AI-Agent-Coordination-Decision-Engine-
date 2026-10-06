@@ -274,11 +274,11 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
               <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 font-mono text-[11px] font-bold rounded-full border border-indigo-200">
                 AEGIS ADVANCED RISK PLATFORM
               </span>
-              <span className="text-xs text-slate-400 font-mono">• Interactive Quantitative Calculators</span>
+              <span className="text-xs text-slate-400 font-mono"></span>
             </div>
             <h2 className="text-xl font-bold text-slate-900 mt-1">Specialized Risk &amp; Quantitative Underwriting Suite</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Enter your values in the form fields below and click <strong>"Submit &amp; Recalculate"</strong> to execute production-grade financial calculations and statutory compliance evaluations.
+              
             </p>
           </div>
 

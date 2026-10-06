@@ -135,7 +135,7 @@ export const ApiDocumentation: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            All endpoints strictly follow enterprise banking API specifications with Pydantic validation, LangGraph agents, and audit logging.
+            
           </p>
         </div>
 

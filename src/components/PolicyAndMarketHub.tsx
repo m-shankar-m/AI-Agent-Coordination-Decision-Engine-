@@ -84,7 +84,7 @@ export const PolicyAndMarketHub: React.FC<PolicyAndMarketHubProps> = ({
               Real-Time Financial Market Telemetry &amp; External API Adapter
             </h3>
             <p className="text-xs text-slate-500">
-              Live macroeconomic benchmarks, central bank interest rates, and currency FX feeds
+              
             </p>
           </div>
 

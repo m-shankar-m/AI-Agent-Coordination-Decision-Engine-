@@ -70,7 +70,7 @@ export const AuditLogExplorer: React.FC<AuditLogExplorerProps> = ({ selectedAppl
               Immutable Regulatory Audit Trail Ledger ({total} Records)
             </h3>
             <p className="text-xs text-slate-500">
-              Cryptographically hashed records tracking every agent decision, tool call, and human supervisory action
+              
             </p>
           </div>
 

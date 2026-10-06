@@ -50,7 +50,7 @@ export const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
         </div>
         <h3 className="text-lg font-semibold text-slate-900 mb-1">No Active Workflow Selected</h3>
         <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
-          To enter custom applicant data or choose a test scenario, switch to the <strong>Applications</strong> tab or click the button below.
+          
         </p>
         {onNavigateToApplications && (
           <button
