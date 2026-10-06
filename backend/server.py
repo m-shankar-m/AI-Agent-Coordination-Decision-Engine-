@@ -17,15 +17,14 @@ import math
 from datetime import datetime
 
 app = FastAPI(
-
-@app.get('/')
-def read_root():
-    return {'status': 'ok'}
-
     title="Aegis Banking Multi-Agent AI Decision Engine",
     version="1.0.0-enterprise",
     description="Enterprise Multi-Agent Banking Decision & Risk Underwriting Platform (FastAPI)"
 )
+
+@app.get('/')
+def read_root():
+    return {'status': 'ok'}
 
 # CORS middleware for microservice and browser ingress
 app.add_middleware(
@@ -746,4 +745,5 @@ if __name__ == "__main__":
 @app.get('/')
 def read_root():
     return {'status': 'ok'}
+
 
