@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://shankar1612-info.hf.space/api/:path*"
+      "destination": "https://ai-agent-coordination-decision-engine-7z3x.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
