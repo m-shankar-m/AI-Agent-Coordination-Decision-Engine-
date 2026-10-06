@@ -6,6 +6,25 @@ from fastapi import FastAPI, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from backend.db import mongo
+
+@app.on_event("startup")
+async def startup_db():
+    await mongo.seed_mongodb_if_empty()
+    
+    global SEED_APPLICATIONS, SEED_PENDING_REVIEWS, SEED_AUDIT_LOGS
+    
+    apps = await mongo.applications_col.find().sort("_id", -1).to_list(1000)
+    for a in apps: a.pop("_id", None)
+    if apps: SEED_APPLICATIONS[:] = apps
+        
+    reviews = await mongo.reviews_col.find().sort("_id", -1).to_list(1000)
+    for r in reviews: r.pop("_id", None)
+    if reviews: SEED_PENDING_REVIEWS[:] = reviews
+        
+    logs = await mongo.audit_logs_col.find().sort("_id", -1).to_list(1000)
+    for l in logs: l.pop("_id", None)
+    if logs: SEED_AUDIT_LOGS[:] = logs
 from typing import List, Dict, Optional, Any
 import asyncio
 import json
@@ -361,9 +380,10 @@ def get_reviews():
     }
 
 @app.post("/api/v1/reviews/{application_id}/decision")
-def submit_review_decision(application_id: str, payload: Dict[str, Any]):
+async def submit_review_decision(application_id: str, payload: Dict[str, Any]):
     global SEED_PENDING_REVIEWS
     SEED_PENDING_REVIEWS = [r for r in SEED_PENDING_REVIEWS if r["application_id"] != application_id]
+    await mongo.reviews_col.delete_many({"application_id": application_id})
     
     # Also update the application status in SEED_APPLICATIONS
     for app in SEED_APPLICATIONS:
@@ -371,8 +391,10 @@ def submit_review_decision(application_id: str, payload: Dict[str, Any]):
             action = payload.get("action", "")
             if action == "APPROVE":
                 app["status"] = "APPROVED"
+                await mongo.applications_col.update_one({"id": application_id}, {"$set": {"status": "APPROVED"}})
             elif action == "REJECT":
                 app["status"] = "REJECTED"
+                await mongo.applications_col.update_one({"id": application_id}, {"$set": {"status": "REJECTED"}})
             break
             
     return {"status": "success", "application_id": application_id}
@@ -388,7 +410,7 @@ def seed_data(payload: Dict[str, Any]):
 from backend.data.synthetic_data import synthetic_data_service
 
 @app.post("/api/v1/applications")
-def create_application(payload: Dict[str, Any]):
+async def create_application(payload: Dict[str, Any]):
     app_id = f"APP-2026-CUST-{int(time.time())}"
     cust_id = f"cust-syn-{int(time.time())}"
     
@@ -456,6 +478,7 @@ def create_application(payload: Dict[str, Any]):
     
     synthetic_data_service.add_scenario(scenario_obj)
     SEED_APPLICATIONS.insert(0, new_app)
+    await mongo.applications_col.insert_one(new_app.copy())
     return new_app
 
 from backend.tools.tool_registry import banking_tools
@@ -566,6 +589,7 @@ async def stream_workflow(workflow_id: str):
                 "data_source": "Synthetic Engine"
             }
             SEED_AUDIT_LOGS.insert(0, audit_record)
+            await mongo.audit_logs_col.insert_one(audit_record.copy())
             
             yield f"data: {json.dumps({'type': 'TOOL_CALLED', 'data': tool_call})}\n\n"
             yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
@@ -577,14 +601,16 @@ async def stream_workflow(workflow_id: str):
                 state["review_reason"] = review_reason
                 
                 # Add to global review queue
-                SEED_PENDING_REVIEWS.append({
+                new_review = {
                     "application_id": state.get("application_id", "APP-UNKNOWN"),
                     "reason": review_reason,
                     "created_at": datetime.utcnow().isoformat() + "Z",
                     "priority": "HIGH",
                     "risk_level": risk_level,
                     "previous_ai_recommendation": "REVIEW_REQUIRED"
-                })
+                }
+                SEED_PENDING_REVIEWS.append(new_review)
+                await mongo.reviews_col.insert_one(new_review.copy())
                 
                 yield f"data: {json.dumps({'type': 'HUMAN_REVIEW_TRIGGERED', 'data': {'reason': review_reason}})}\n\n"
                 return

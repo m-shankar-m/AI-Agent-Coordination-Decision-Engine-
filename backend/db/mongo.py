@@ -3,7 +3,7 @@ import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://shankar1612202_db_user:wIJc5uJwuZTh942D@cluster0.z07hiu0.mongodb.net/?appName=Cluster0")
 DB_NAME = "aegis_banking_engine"
 
 client = AsyncIOMotorClient(MONGO_URL)
