@@ -563,7 +563,7 @@ async def stream_workflow(workflow_id: str):
         for idx in range(7):
             if idx < 5:
                 agent_name, step_num, tool_name, result = steps_early[idx]
-                await asyncio.sleep(1.2)  # Increased delay to perfectly mask the LLM generation time so it doesn't pause at step 7
+                await asyncio.sleep(0.5)  # Artificial delay to let LLM work in background
             elif idx == 5:
                 # Tell the UI we are now on Decision Agent so it doesn't look frozen on Compliance Agent
                 state["current_agent"] = "Decision Agent"
