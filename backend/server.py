@@ -8,26 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from backend.db import mongo
 
-@app.on_event("startup")
-async def startup_db():
-    try:
-        await mongo.seed_mongodb_if_empty()
-        
-        global SEED_APPLICATIONS, SEED_PENDING_REVIEWS, SEED_AUDIT_LOGS
-        
-        apps = await mongo.applications_col.find().sort("_id", -1).to_list(1000)
-        for a in apps: a.pop("_id", None)
-        if apps: SEED_APPLICATIONS[:] = apps
-            
-        reviews = await mongo.reviews_col.find().sort("_id", -1).to_list(1000)
-        for r in reviews: r.pop("_id", None)
-        if reviews: SEED_PENDING_REVIEWS[:] = reviews
-            
-        logs = await mongo.audit_logs_col.find().sort("_id", -1).to_list(1000)
-        for l in logs: l.pop("_id", None)
-        if logs: SEED_AUDIT_LOGS[:] = logs
-    except Exception as e:
-        print(f"MongoDB connection failed on startup: {e}")
+
 from typing import List, Dict, Optional, Any
 import asyncio
 import json
@@ -49,6 +30,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_db():
+    try:
+        await mongo.seed_mongodb_if_empty()
+        
+        global SEED_APPLICATIONS, SEED_PENDING_REVIEWS, SEED_AUDIT_LOGS
+        
+        apps = await mongo.applications_col.find().sort("_id", -1).to_list(1000)
+        for a in apps: a.pop("_id", None)
+        if apps: SEED_APPLICATIONS[:] = apps
+            
+        reviews = await mongo.reviews_col.find().sort("_id", -1).to_list(1000)
+        for r in reviews: r.pop("_id", None)
+        if reviews: SEED_PENDING_REVIEWS[:] = reviews
+            
+        logs = await mongo.audit_logs_col.find().sort("_id", -1).to_list(1000)
+        for l in logs: l.pop("_id", None)
+        if logs: SEED_AUDIT_LOGS[:] = logs
+    except Exception as e:
+        print(f"MongoDB connection failed on startup: {e}")
 
 server_start_time = time.time()
 
@@ -540,26 +542,34 @@ async def stream_workflow(workflow_id: str):
             fraud_risk = "HIGH"
             fraud_score = 95
         
-        # Decision Agent output (Powered by LangChain & Gemini)
+        # Start LLM Agent asynchronously so it runs while we stream earlier steps
         from backend.workflows.llm_agent import evaluate_application
-        llm_result = await evaluate_application(customer_data, documents)
-        decision = llm_result["decision"]
-        decision_conf = llm_result["confidence"]
-        decision_reason = llm_result["reason"]
+        llm_task = asyncio.create_task(evaluate_application(customer_data, documents))
 
-        steps = [
+        steps_early = [
             ("Document Agent", 2, "verify_document", {"status": "VERIFIED" if not c_mismatch else "MISMATCH", "confidence": 0.98 if not c_mismatch else 0.4, "name_match": not c_mismatch, "dob_match": True, "is_synthetic": True}),
             ("KYC Agent", 3, "verify_identity", {"status": "VERIFIED" if not c_pep else "FLAGGED", "sanctions_cleared": True, "pep_identified": c_pep, "details": "Identity check complete", "is_synthetic": True}),
             ("Risk Agent", 4, "calculate_risk", {"risk_level": risk_level, "credit_score": c_score, "debt_to_income_ratio": 25, "explanation": f"{risk_level.title()} risk profile", "is_synthetic": True}),
             ("Fraud Agent", 5, "check_fraud_indicators", {"fraud_risk": fraud_risk, "fraud_score": fraud_score, "duplicate_detected": False, "suspicious_indicators": ["Tampering"] if c_tamper else [], "is_synthetic": True}),
             ("Compliance Agent", 6, "check_compliance", {"status": "PASS", "policy_rules_applied": ["KYC-01", "AML-02"], "compliance_notes": "Compliant", "is_synthetic": True}),
-            ("Decision Agent", 7, "create_audit_record", {"decision": decision, "confidence": decision_conf, "reasons": [decision_reason] if decision_reason else [], "supporting_factors": [], "data_sources": ["Synthetic KYC", "Bureau"], "timestamp": datetime.utcnow().isoformat() + "Z"}),
-            ("Response Agent", 8, "send_notification", {"customer_message": f"Your application is {decision.split('_')[0].lower()}.", "internal_summary": decision_reason, "notification_dispatched": True})
         ]
         
         result_keys = ["document_result", "kyc_result", "risk_result", "fraud_result", "compliance_result", "decision_result", "response_result"]
         
-        for idx, (agent_name, step_num, tool_name, result) in enumerate(steps):
+        for idx in range(7):
+            if idx < 5:
+                agent_name, step_num, tool_name, result = steps_early[idx]
+                await asyncio.sleep(0.5)  # Artificial delay to let LLM work in background
+            elif idx == 5:
+                llm_result = await llm_task
+                decision = llm_result["decision"]
+                decision_conf = llm_result["confidence"]
+                decision_reason = llm_result["reason"]
+                agent_name, step_num, tool_name, result = ("Decision Agent", 7, "create_audit_record", {"decision": decision, "confidence": decision_conf, "reasons": [decision_reason] if decision_reason else [], "supporting_factors": [], "data_sources": ["Synthetic KYC", "Bureau"], "timestamp": datetime.utcnow().isoformat() + "Z"})
+                await asyncio.sleep(0.05)
+            elif idx == 6:
+                agent_name, step_num, tool_name, result = ("Response Agent", 8, "send_notification", {"customer_message": f"Your application is {decision.split('_')[0].lower()}.", "internal_summary": decision_reason, "notification_dispatched": True})
+                await asyncio.sleep(0.05)
             await asyncio.sleep(0.05)
             state["current_agent"] = agent_name
             state["current_step"] = step_num
