@@ -565,6 +565,11 @@ async def stream_workflow(workflow_id: str):
                 agent_name, step_num, tool_name, result = steps_early[idx]
                 await asyncio.sleep(1.2)  # Increased delay to perfectly mask the LLM generation time so it doesn't pause at step 7
             elif idx == 5:
+                # Tell the UI we are now on Decision Agent so it doesn't look frozen on Compliance Agent
+                state["current_agent"] = "Decision Agent"
+                state["current_step"] = 7
+                yield f"data: {json.dumps({'type': 'SNAPSHOT', 'data': state})}\n\n"
+                
                 try:
                     llm_result = await llm_task
                 except Exception as e:
