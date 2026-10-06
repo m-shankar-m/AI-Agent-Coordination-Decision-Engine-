@@ -537,15 +537,9 @@ async def stream_workflow(workflow_id: str):
             fraud_risk = "HIGH"
             fraud_score = 95
         
-        # Decision Agent output (Powered by LangChain & OpenAI)
+        # Decision Agent output (Powered by LangChain & Gemini)
         from backend.workflows.llm_agent import evaluate_application
-        app_id = state.get("application_id", "")
-        if app_id == "APP-2026-002" or c_mismatch:
-            llm_result = {"decision": "HUMAN_REVIEW_RECOMMENDED", "confidence": 0.65, "reason": "Document DOB mismatch detected. Requires manual review."}
-        elif app_id == "APP-2026-003" or c_pep or c_tamper or c_score < 600:
-            llm_result = {"decision": "REJECT_RECOMMENDATION", "confidence": 0.88, "reason": "High risk profile, PEP match, or tamper detected."}
-        else:
-            llm_result = {"decision": "APPROVAL_RECOMMENDATION", "confidence": 0.95, "reason": "Customer meets all requirements."}
+        llm_result = await evaluate_application(customer_data, documents)
         decision = llm_result["decision"]
         decision_conf = llm_result["confidence"]
         decision_reason = llm_result["reason"]
