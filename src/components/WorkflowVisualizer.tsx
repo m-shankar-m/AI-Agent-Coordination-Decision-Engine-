@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Brain,
   FileCheck,
@@ -34,7 +34,13 @@ export const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
   onTriggerReview,
   onNavigateToApplications,
 }) => {
-  const [selectedAgentNode, setSelectedAgentNode] = useState<string | null>('Decision Agent');
+  const [selectedAgentNode, setSelectedAgentNode] = useState<string | null>(workflowState?.current_agent || 'Planning Agent');
+
+  useEffect(() => {
+    if (workflowState?.current_agent) {
+      setSelectedAgentNode(workflowState.current_agent);
+    }
+  }, [workflowState?.current_agent]);
 
   if (!workflowState) {
     return (

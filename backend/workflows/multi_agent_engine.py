@@ -40,4 +40,11 @@ class MultiAgentWorkflowEngine:
     def get_workflow_state(self, workflow_id: str) -> Optional[Dict[str, Any]]:
         return self.active_workflows.get(workflow_id)
 
+    def get_latest_workflow_for_app(self, application_id: str) -> Optional[Dict[str, Any]]:
+        matches = [wf for wf in self.active_workflows.values() if wf.get("application_id") == application_id]
+        if not matches:
+            return None
+        matches.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        return matches[0]
+
 multi_agent_engine = MultiAgentWorkflowEngine()

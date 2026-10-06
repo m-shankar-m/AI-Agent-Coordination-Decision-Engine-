@@ -145,6 +145,7 @@ export default function App() {
     setSelectedAppId(appId);
     setActiveTab('workflows');
     setToolCalls([]);
+    setActiveWorkflow(null);
 
     if (sseRef.current) {
       sseRef.current.close();
@@ -356,9 +357,23 @@ export default function App() {
             pendingReviews={pendingReviews}
             reviewHistory={reviewHistory}
             currentRole={currentRole}
-            onSelectApplication={(id) => {
+            onSelectApplication={async (id) => {
               setSelectedAppId(id);
               setActiveTab('workflows');
+              try {
+                const res = await fetch(`/api/v1/workflows/application/${id}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  setActiveWorkflow(data.state);
+                  setToolCalls(data.tool_calls);
+                } else {
+                  console.warn(`Could not load historical workflow for ${id}`);
+                  setActiveWorkflow(null);
+                  setToolCalls([]);
+                }
+              } catch (e) {
+                console.error(e);
+              }
             }}
             onSubmitDecision={handleSubmitReviewDecision}
           />

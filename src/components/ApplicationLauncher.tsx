@@ -119,7 +119,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       setFormCreditScore(645);
       setFormIdType('DRIVING_LICENSE');
       setFormIdNumber('DL-TX-445109');
-      setFormScenario('MEDIUM_RISK');
+      setFormScenario('DOCUMENT_MISMATCH');
       setFormDocMismatch(true);
       setFormTamperDetected(false);
       setFormPepStatus(false);
@@ -138,7 +138,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       setFormCreditScore(520);
       setFormIdType('PASSPORT');
       setFormIdNumber('P-99988X');
-      setFormScenario('FRAUD_SUSPECT');
+      setFormScenario('FRAUD_INDICATOR');
       setFormDocMismatch(false);
       setFormTamperDetected(true);
       setFormPepStatus(true);
@@ -313,7 +313,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             <button
               id="btn-scenario-1"
               onClick={() => {
-                const target = applications.find((a) => a.scenario === 'LOW_RISK') || applications[0];
+                const target = applications.find((a) => a.id === 'APP-2026-001') || applications.find((a) => a.scenario === 'LOW_RISK' && a.is_synthetic) || applications.find((a) => a.scenario === 'LOW_RISK') || applications[0];
                 if (target) {
                   onSelectApplication(target.id);
                   onLaunchWorkflow(target.id);
@@ -343,7 +343,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             <button
               id="btn-scenario-2"
               onClick={() => {
-                const target = applications.find((a) => a.scenario === 'MEDIUM_RISK') || applications[1];
+                const target = applications.find((a) => a.id === 'APP-2026-002') || applications.find((a) => a.scenario === 'DOCUMENT_MISMATCH' && a.is_synthetic) || applications.find((a) => a.scenario === 'DOCUMENT_MISMATCH') || applications[1];
                 if (target) {
                   onSelectApplication(target.id);
                   onLaunchWorkflow(target.id);
@@ -373,7 +373,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             <button
               id="btn-scenario-3"
               onClick={() => {
-                const target = applications.find((a) => a.scenario === 'FRAUD_SUSPECT') || applications[2];
+                const target = applications.find((a) => a.id === 'APP-2026-003') || applications.find((a) => a.scenario === 'FRAUD_INDICATOR' && a.is_synthetic) || applications.find((a) => a.scenario === 'FRAUD_INDICATOR') || applications[2];
                 if (target) {
                   onSelectApplication(target.id);
                   onLaunchWorkflow(target.id);
@@ -484,9 +484,9 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             >
               <option value="ALL">All Risk Tiers</option>
               <option value="LOW_RISK">Low Risk</option>
-              <option value="MEDIUM_RISK">Medium Risk</option>
+              <option value="DOCUMENT_MISMATCH">Medium Risk (Mismatch)</option>
               <option value="HIGH_RISK">High Risk</option>
-              <option value="FRAUD_SUSPECT">Fraud Suspect</option>
+              <option value="FRAUD_INDICATOR">Fraud Suspect</option>
             </select>
 
             {/* Search */}
@@ -544,7 +544,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
                         className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                           app.scenario === 'LOW_RISK'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : app.scenario === 'MEDIUM_RISK'
+                            : app.scenario === 'DOCUMENT_MISMATCH' || app.scenario === 'MEDIUM_RISK'
                             ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
@@ -1054,9 +1054,10 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
                   Cancel
                 </button>
                 <button
-                  type="button"
+                  type={modalMode === 'FORM' ? 'submit' : 'button'}
+                  form={modalMode === 'FORM' ? 'custom-applicant-form' : undefined}
+                  onClick={modalMode === 'JSON' ? (e) => handleCreateSubmit(e) : undefined}
                   id="btn-submit-create"
-                  onClick={(e) => handleCreateSubmit(e)}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-xs shadow-xs transition flex items-center space-x-1.5"
                 >
                   <Play className="w-3.5 h-3.5" />
