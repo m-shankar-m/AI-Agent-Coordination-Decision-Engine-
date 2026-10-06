@@ -90,7 +90,7 @@ export const ReviewPortal: React.FC<ReviewPortalProps> = ({
                 <UserCheck className="w-4 h-4 mr-1.5 text-amber-600" />
                 Review Queue ({pendingReviews.length})
               </h3>
-              <p className="text-[11px] text-slate-400">Applications flagged by AI agents</p>
+              <p className="text-[11px] text-slate-400"></p>
             </div>
           </div>
 

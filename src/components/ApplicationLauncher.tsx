@@ -272,7 +272,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               Demonstration Scenarios
             </h3>
             <p className="text-xs text-slate-500">
-              Select any pre-configured enterprise scenario to trigger the autonomous LangGraph workflow
+              
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -307,7 +307,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Normal Low-Risk Approval</h4>
               <p className="text-xs text-slate-600 mb-3">
-                Elena Rostova: ₹14,50,000 (14.5L) income, 760 credit score, verified passport. Standard automated fast-track approval.
+                
               </p>
             </div>
             <button
@@ -337,7 +337,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Document Discrepancy & Review</h4>
               <p className="text-xs text-slate-600 mb-3">
-                Marcus Vance: Name OCR mismatch &amp; moderate debt ratio. Automatically routes to Human Review queue.
+                
               </p>
             </div>
             <button
@@ -367,7 +367,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Suspicious / Tampered Fraud</h4>
               <p className="text-xs text-slate-600 mb-3">
-                Alex Chen: Tampered driver license, disposable email, sanctions match. Immediate security escalation.
+                
               </p>
             </div>
             <button
@@ -403,7 +403,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">API Outage & Fallback Recovery</h4>
               <p className="text-xs text-slate-600 mb-3">
-                Tests circuit-breaker: live external market API timeout triggers fallback reserve cache automatically.
+                
               </p>
             </div>
             <div className="space-y-1.5">
@@ -444,9 +444,9 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Want to test your own custom customer data or edge cases?</h4>
+            <h4 className="text-xs font-bold text-slate-900">custom data</h4>
             <p className="text-xs text-slate-600 mt-0.5">
-              You are not limited to pre-defined fixtures. Click <strong className="text-indigo-700">"+ Custom Applicant"</strong> to input your own custom names, credit scores, declared incomes, and verification documents, or paste raw JSON.
+              
             </p>
           </div>
         </div>
@@ -470,7 +470,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
               Synthetic Banking Applications Registry ({totalApplications.toLocaleString()})
             </h3>
             <span className="text-[11px] text-slate-500">
-              Complies with strict regulatory data isolation policy (Synthetic test fixtures only)
+              
             </span>
           </div>
 
