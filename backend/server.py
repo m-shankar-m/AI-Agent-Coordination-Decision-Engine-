@@ -742,3 +742,8 @@ def get_audit_logs(application_id: str, page: int = 1, limit: int = 25, agent: s
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.get('/')
+def read_root():
+    return {'status': 'ok'}
+
