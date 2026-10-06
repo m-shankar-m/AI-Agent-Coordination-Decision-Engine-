@@ -565,7 +565,10 @@ async def stream_workflow(workflow_id: str):
                 agent_name, step_num, tool_name, result = steps_early[idx]
                 await asyncio.sleep(0.5)  # Artificial delay to let LLM work in background
             elif idx == 5:
-                llm_result = await llm_task
+                try:
+                    llm_result = await llm_task
+                except Exception as e:
+                    llm_result = {"decision": "HUMAN_REVIEW_RECOMMENDED", "confidence": 0.0, "reason": f"System Crash: {str(e)}"}
                 decision = llm_result["decision"]
                 decision_conf = llm_result["confidence"]
                 decision_reason = llm_result["reason"]
