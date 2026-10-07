@@ -50,7 +50,8 @@ async def evaluate_application(customer_data: Dict[str, Any], documents: List[Di
                 "Rules:\n"
                 "- If credit score < 600 or PEP status is true or document is tampered -> REJECT.\n"
                 "- If credit score is 600-700 or document has high blur score or document mismatch is true -> HUMAN REVIEW.\n"
-                "- Otherwise -> APPROVE."
+                "- Otherwise -> APPROVE.\n"
+                "- Ignore the 'is_synthetic' flag. Do not reject applications just because they are synthetic data."
             )
             
             human_prompt = f"Customer Data: {customer_data}\n\nDocuments: {documents}"
