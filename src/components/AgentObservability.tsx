@@ -111,22 +111,7 @@ export const AgentObservability: React.FC<AgentObservabilityProps> = ({
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 space-y-1 text-[11px] text-slate-600">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Total Runs:</span>
-                    <span className="font-mono font-semibold">{agent.total_runs}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Avg Latency:</span>
-                    <span className="font-mono">{agent.execution_time_ms}ms</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Success Rate:</span>
-                    <span className="font-mono text-emerald-600 font-semibold">
-                      {Math.round(agent.success_rate * 100)}%
-                    </span>
-                  </div>
-                  <div className="mt-1.5 pt-1 border-t border-slate-100 flex flex-wrap gap-1">
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
                     {agent.allowed_tools.map((t) => (
                       <span
                         key={t}

@@ -103,23 +103,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* RBAC Role Selector & Actions */}
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-              <span className="text-xs font-medium text-slate-500 pl-1.5 flex items-center">
-                <UserCheck className="w-3.5 h-3.5 mr-1 text-slate-400" /> Role:
-              </span>
-              <select
-                id="rbac-role-select"
-                value={currentRole}
-                onChange={(e) => onRoleChange(e.target.value as RBACRole)}
-                className="bg-white text-xs font-semibold text-slate-800 rounded px-2 py-1 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="ADMIN">ADMIN</option>
-                <option value="REVIEWER">REVIEWER</option>
-                <option value="OPERATIONS">OPERATIONS</option>
-                <option value="ANALYST">ANALYST</option>
-                <option value="VIEWER">VIEWER</option>
-              </select>
-            </div>
 
             {onRefreshData && (
               <button

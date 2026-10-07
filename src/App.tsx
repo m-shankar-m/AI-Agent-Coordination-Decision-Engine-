@@ -414,10 +414,8 @@ export default function App() {
 
       {/* Enterprise Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-slate-700">AegisBank Decision Engine</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center text-xs text-slate-500">
+          <span className="font-semibold text-slate-700">AegisBank Decision Engine</span>
         </div>
       </footer>
     </div>
