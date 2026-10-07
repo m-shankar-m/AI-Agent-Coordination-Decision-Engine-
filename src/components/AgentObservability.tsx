@@ -121,7 +121,6 @@ export const AgentObservability: React.FC<AgentObservabilityProps> = ({
                       </span>
                     ))}
                   </div>
-                </div>
               </div>
             );
           })}
