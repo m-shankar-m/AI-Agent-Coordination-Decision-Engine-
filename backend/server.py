@@ -595,6 +595,22 @@ async def stream_workflow(workflow_id: str):
                 "execution_time_ms": 150 + (int(time.time()) % 100)
             }
             
+            status_val = "SUCCESS"
+            if agent_name == "Document Agent" and result.get("status") == "MISMATCH":
+                status_val = "WARNING"
+            elif agent_name == "KYC Agent" and result.get("status") == "FLAGGED":
+                status_val = "FAILED"
+            elif agent_name == "Risk Agent" and result.get("risk_level") in ["MEDIUM", "HIGH"]:
+                status_val = "WARNING" if result.get("risk_level") == "MEDIUM" else "FAILED"
+            elif agent_name == "Fraud Agent" and result.get("fraud_risk") == "HIGH":
+                status_val = "FAILED"
+            elif agent_name == "Decision Agent":
+                dec = result.get("decision", "")
+                if dec == "REJECTION_RECOMMENDATION":
+                    status_val = "FAILED"
+                elif dec == "HUMAN_REVIEW_RECOMMENDED":
+                    status_val = "WARNING"
+
             audit_record = {
                 "id": f"aud-{int(time.time()*1000)}-{idx}",
                 "application_id": state.get("application_id", "APP-UNKNOWN"),
@@ -602,7 +618,7 @@ async def stream_workflow(workflow_id: str):
                 "action": tool_name,
                 "input_hash": f"hash-{int(time.time())}",
                 "output_data": result,
-                "status": "SUCCESS",
+                "status": status_val,
                 "execution_time_ms": 150 + (int(time.time()) % 100),
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "data_source": "Synthetic Engine"
