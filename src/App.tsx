@@ -417,13 +417,6 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-slate-700">AegisBank Decision Engine</span>
-            <span>•</span>
-            <span className="font-mono">Port 3000 (Vite + Express)</span>
-            <span>•</span>
-            <span className="text-emerald-600 font-medium">SOC-2 / ISO-27001 Compliant Architecture</span>
-          </div>
-          <div className="text-[11px] font-mono text-slate-400">
-            DEMONSTRATION &amp; SYNTHETIC DATA FIXTURES ONLY
           </div>
         </div>
       </footer>

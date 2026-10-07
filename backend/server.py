@@ -746,6 +746,41 @@ def get_audit_logs(application_id: str, page: int = 1, limit: int = 25, agent: s
         "limit": limit
     }
 
+MOCK_POLICIES = [
+    {
+        "id": "pol-001",
+        "code": "KYC-01",
+        "title": "Customer Identification Program",
+        "text": "All new customers must provide a valid government-issued ID and proof of address. The ID must not be expired and must clearly show the customer's face.",
+        "category": "KYC"
+    },
+    {
+        "id": "pol-002",
+        "code": "AML-02",
+        "title": "Anti-Money Laundering Thresholds",
+        "text": "Transactions exceeding $10,000 must be reported to the financial intelligence unit within 24 hours. Multiple related transactions aggregating to $10,000 are also covered.",
+        "category": "AML"
+    },
+    {
+        "id": "pol-003",
+        "code": "CRD-03",
+        "title": "Credit Score Minimums",
+        "text": "Applicants must have a credit score of at least 600 to qualify for standard loans. Debt-to-income ratio must not exceed 43%.",
+        "category": "CREDIT"
+    }
+]
+
+@app.get("/api/v1/policies")
+def get_policies(q: Optional[str] = None):
+    if q:
+        query = q.lower()
+        results = []
+        for p in MOCK_POLICIES:
+            if query in p["title"].lower() or query in p["text"].lower() or query in p["code"].lower() or query in p["category"].lower():
+                results.append({"policy": p, "similarity": 0.92})
+        return {"results": results}
+    return {"policies": MOCK_POLICIES}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
