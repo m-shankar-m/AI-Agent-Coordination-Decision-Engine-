@@ -29,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
         ? [
             { id: 'all_applications', label: 'All Applications' },
             { id: 'reviews', label: 'Human Review Queue', badge: pendingReviewCount },
+            { id: 'workflows', label: 'Workflow Details' },
             { id: 'audit', label: 'Regulatory Audit Log' },
           ]
         : [
