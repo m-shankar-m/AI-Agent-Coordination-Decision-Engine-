@@ -38,7 +38,10 @@ export default function App() {
   const [currentUserEmail, setCurrentUserEmail] = useState(() => localStorage.getItem('email') || '');
   const [currentUserName, setCurrentUserName] = useState(() => localStorage.getItem('name') || '');
   const [currentRole, setCurrentRole] = useState<RBACRole>(() => (localStorage.getItem('role') as RBACRole) || 'USER');
-  const [activeTab, setActiveTab] = useState<string>('mystatus');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const savedRole = localStorage.getItem('role') as RBACRole | null;
+    return savedRole === 'ADMIN' ? 'all_applications' : 'mystatus';
+  });
 
   // Application & Workflow State
   const [applications, setApplications] = useState<ApplicationRecord[]>(FALLBACK_APPLICATIONS);
