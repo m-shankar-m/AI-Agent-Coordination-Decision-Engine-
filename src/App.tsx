@@ -15,6 +15,7 @@ import { ApiDocumentation } from './components/ApiDocumentation.js';
 import { SpecializedRiskEngines } from './components/SpecializedRiskEngines.js';
 import { MyStatus } from './components/MyStatus.js';
 import { AuthScreen } from './components/AuthScreen.js';
+import { AllApplicationsAdmin } from './components/AllApplicationsAdmin.js';
 import {
   FALLBACK_AGENTS,
   FALLBACK_TOOLS,
@@ -310,7 +311,7 @@ export default function App() {
     localStorage.setItem('email', email);
     localStorage.setItem('name', name);
     localStorage.setItem('auth', 'true');
-    setActiveTab(role === 'ADMIN' ? 'reviews' : 'applications');
+    setActiveTab(role === 'ADMIN' ? 'all_applications' : 'applications');
   };
 
   const handleLogout = () => {
@@ -464,6 +465,31 @@ export default function App() {
 
         {activeTab === 'audit' && (
           <AuditLogExplorer selectedApplicationId={selectedAppId} />
+        )}
+
+        {activeTab === 'all_applications' && (
+          <AllApplicationsAdmin
+            applications={applications}
+            onSelectApplication={async (id) => {
+              setSelectedAppId(id);
+              setActiveTab('workflows');
+              try {
+                const res = await fetch(`/api/v1/workflows/application/${id}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  setActiveWorkflow(data.state);
+                  setToolCalls(data.tool_calls);
+                } else {
+                  console.warn(`Could not load historical workflow for ${id}`);
+                  setActiveWorkflow(null);
+                  setToolCalls([]);
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            onLaunchWorkflow={handleLaunchWorkflow}
+          />
         )}
 
         {activeTab === 'api' && <ApiDocumentation />}

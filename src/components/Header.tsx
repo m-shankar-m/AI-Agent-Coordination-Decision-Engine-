@@ -25,12 +25,13 @@ export const Header: React.FC<HeaderProps> = ({
   isStreaming,
   onLogout,
 }) => {
-  const tabs = currentRole === 'ADMIN'
-    ? [
-        { id: 'reviews', label: 'Human Review Queue', badge: pendingReviewCount },
-        { id: 'audit', label: 'Regulatory Audit Log' },
-      ]
-    : [
+      const tabs = currentRole === 'ADMIN'
+        ? [
+            { id: 'all_applications', label: 'All Applications' },
+            { id: 'reviews', label: 'Human Review Queue', badge: pendingReviewCount },
+            { id: 'audit', label: 'Regulatory Audit Log' },
+          ]
+        : [
         { id: 'mystatus', label: 'My Status' },
         { id: 'applications', label: 'Application' },
         { id: 'workflows', label: 'Workflow & Agents' },
