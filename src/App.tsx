@@ -378,10 +378,7 @@ export default function App() {
             totalApplications={userTotalApplications}
             onRefreshData={fetchApplications}
             onNavigateToApply={() => setActiveTab('applications')}
-            onLaunchWorkflow={(id) => {
-              setSelectedAppId(id);
-              setActiveTab('workflows');
-            }}
+            onLaunchWorkflow={handleLaunchWorkflow}
             onSelectApplication={setSelectedAppId}
             selectedApplicationId={selectedAppId}
           />

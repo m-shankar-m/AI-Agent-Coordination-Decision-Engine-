@@ -194,6 +194,39 @@ class SyntheticDataService:
         for s in self.scenarios:
             if s["application"]["id"] == app_id:
                 return s
+        
+        # Fallback to recreate lost data from SEED_APPLICATIONS after restart
+        try:
+            from backend.server import SEED_APPLICATIONS
+            for app in SEED_APPLICATIONS:
+                if app["id"] == app_id:
+                    scenario_type = app.get("scenario", "LOW_RISK")
+                    c_mismatch = (scenario_type == "DOCUMENT_MISMATCH")
+                    c_pep = (scenario_type == "FRAUD_INDICATOR")
+                    
+                    return {
+                        "customer": {
+                            "id": app.get("customer_id", "cust-unknown"),
+                            "full_name": app.get("customer_name", "Unknown"),
+                            "email": app.get("customer_email", ""),
+                            "annual_income": app.get("annual_income", 0),
+                            "pep_status": c_pep,
+                            "credit_score": 750 if scenario_type == "LOW_RISK" else 650,
+                            "is_synthetic": True,
+                        },
+                        "application": app,
+                        "documents": [{
+                            "id": f"doc-{app.get('customer_id')}",
+                            "document_type": "IDENTITY_DOCUMENT",
+                            "extracted_name": app.get("customer_name", "Unknown"),
+                            "tamper_flags_detected": c_pep,
+                            "blur_score": 0.5 if c_mismatch else 0.05,
+                            "is_synthetic": True
+                        }]
+                    }
+        except ImportError:
+            pass
+            
         return self.scenarios[0]
 
     def add_scenario(self, scenario: Dict[str, Any]):
