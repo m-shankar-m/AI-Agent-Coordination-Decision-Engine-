@@ -373,6 +373,7 @@ export default function App() {
               setSelectedAppId(id);
               handleLaunchWorkflow(id);
             }}
+            selectedApplication={applications.find(a => a.id === selectedAppId) || null}
           />
         )}
 

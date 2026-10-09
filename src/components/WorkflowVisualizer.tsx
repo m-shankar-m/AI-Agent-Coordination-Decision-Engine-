@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Brain,
+  Play,
   FileCheck,
   UserCheck2,
   TrendingUp,
@@ -26,13 +27,16 @@ interface WorkflowVisualizerProps {
   onTriggerReview?: (applicationId: string) => void;
   onSelectApplication?: (appId: string) => void;
   onNavigateToApplications?: () => void;
+  selectedApplication?: import('../types/banking.js').ApplicationRecord | null;
 }
 
 export const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
   workflowState,
   toolCalls,
   onTriggerReview,
+  onSelectApplication,
   onNavigateToApplications,
+  selectedApplication,
 }) => {
   const [selectedAgentNode, setSelectedAgentNode] = useState<string | null>(workflowState?.current_agent || 'Planning Agent');
 
@@ -48,19 +52,78 @@ export const WorkflowVisualizer: React.FC<WorkflowVisualizerProps> = ({
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
           <Brain className="w-8 h-8" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-1">No Active Workflow Selected</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
-          
-        </p>
-        {onNavigateToApplications && (
-          <button
-            id="btn-go-to-applications"
-            onClick={onNavigateToApplications}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs shadow-xs transition inline-flex items-center space-x-2 cursor-pointer"
-          >
-            <span>Go to Applications &amp; Enter Data</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+        
+        {selectedApplication ? (
+          <>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              Application Details: {selectedApplication.id}
+            </h3>
+            
+            <div className="max-w-xl mx-auto mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200 text-left">
+              <div className="grid grid-cols-2 gap-y-4 text-sm">
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Applicant Name</span>
+                  <span className="font-semibold text-slate-900">{selectedApplication.customer_name}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Email</span>
+                  <span className="text-slate-700">{selectedApplication.customer_email}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Product</span>
+                  <span className="text-slate-700">{selectedApplication.product_type.replace(/_/g, ' ')}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Income</span>
+                  <span className="text-slate-700">{formatINR(selectedApplication.annual_income)}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Status</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                    selectedApplication.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                    selectedApplication.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
+                    'bg-amber-100 text-amber-800'
+                  }`}>
+                    {selectedApplication.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Risk Scenario</span>
+                  <span className="text-slate-700">{selectedApplication.scenario ? selectedApplication.scenario.replace(/_/g, ' ') : 'NONE'}</span>
+                </div>
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-slate-200 text-center">
+                <p className="text-xs text-slate-500 mb-4">
+                  No automated workflow has been executed for this application yet.
+                </p>
+                <button
+                  onClick={() => onSelectApplication?.(selectedApplication.id)}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-sm shadow-sm transition inline-flex items-center space-x-2"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Run Autonomous AI Agents</span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">No Active Workflow Selected</h3>
+            <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+              Select an application from the registry to view its details or launch its workflow.
+            </p>
+            {onNavigateToApplications && (
+              <button
+                id="btn-go-to-applications"
+                onClick={onNavigateToApplications}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs shadow-xs transition inline-flex items-center space-x-2 cursor-pointer"
+              >
+                <span>Go to Applications &amp; Enter Data</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </>
         )}
       </div>
     );
