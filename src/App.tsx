@@ -416,6 +416,7 @@ export default function App() {
 
         {activeTab === 'reviews' && (
           <ReviewPortal
+            applications={applications}
             pendingReviews={pendingReviews}
             reviewHistory={reviewHistory}
             currentRole={currentRole}

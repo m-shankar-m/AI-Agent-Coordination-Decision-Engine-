@@ -11,7 +11,8 @@ import {
   ArrowRight,
   User,
 } from 'lucide-react';
-import { HumanReviewRecord, RBACRole } from '../types/banking.js';
+import { HumanReviewRecord, RBACRole, ApplicationRecord } from '../types/banking.js';
+import { formatINR } from '../utils/currency.js';
 
 interface PendingReviewItem {
   application_id: string;
@@ -23,6 +24,7 @@ interface PendingReviewItem {
 }
 
 interface ReviewPortalProps {
+  applications: ApplicationRecord[];
   pendingReviews: PendingReviewItem[];
   reviewHistory: HumanReviewRecord[];
   currentRole: RBACRole;
@@ -36,6 +38,7 @@ interface ReviewPortalProps {
 }
 
 export const ReviewPortal: React.FC<ReviewPortalProps> = ({
+  applications,
   pendingReviews,
   reviewHistory,
   currentRole,
@@ -51,6 +54,7 @@ export const ReviewPortal: React.FC<ReviewPortalProps> = ({
   const [reviewerName, setReviewerName] = useState<string>('Officer Sarah Jenkins');
 
   const activeReview = pendingReviews.find((r) => r.application_id === selectedReviewAppId);
+  const activeApplication = applications.find((a) => a.id === selectedReviewAppId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +107,7 @@ export const ReviewPortal: React.FC<ReviewPortalProps> = ({
             ) : (
               pendingReviews.map((item) => {
                 const isSelected = selectedReviewAppId === item.application_id;
+                const appDetails = applications.find(a => a.id === item.application_id);
                 return (
                   <div
                     key={item.application_id}
@@ -131,6 +136,11 @@ export const ReviewPortal: React.FC<ReviewPortalProps> = ({
                     <p className="text-xs text-slate-600 line-clamp-2 mb-2">
                       {item.reason}
                     </p>
+                    {appDetails && (
+                      <div className="mb-2 text-xs text-slate-500">
+                        <span className="font-semibold text-slate-700">{appDetails.customer_name}</span> &bull; {appDetails.product_type.replace(/_/g, ' ')}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
                       <span>Prior AI: {item.previous_ai_recommendation.replace('_RECOMMENDATION', '')}</span>
                       <span>{new Date(item.created_at).toLocaleTimeString()}</span>
@@ -170,6 +180,28 @@ export const ReviewPortal: React.FC<ReviewPortalProps> = ({
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
+
+              {/* Application Snapshot */}
+              {activeApplication && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Applicant Name</span>
+                    <span className="text-xs font-semibold text-slate-900">{activeApplication.customer_name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Email / Contact</span>
+                    <span className="text-xs font-semibold text-slate-700">{activeApplication.customer_email}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Product / Limit</span>
+                    <span className="text-xs font-semibold text-slate-900">{activeApplication.product_type.replace(/_/g, ' ')}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-slate-400">Income</span>
+                    <span className="text-xs font-semibold text-slate-700">{formatINR(activeApplication.annual_income)}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Evidence Box */}
               <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 mb-6">
