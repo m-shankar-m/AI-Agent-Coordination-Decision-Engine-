@@ -26,7 +26,27 @@ import {
 } from 'lucide-react';
 import { formatINR } from '../utils/currency.js';
 
-export const SpecializedRiskEngines: React.FC = () => {
+interface SpecializedRiskEnginesProps {
+  onApplicationCreated?: () => void;
+  currentUserEmail?: string;
+}
+
+export const SpecializedRiskEngines: React.FC<SpecializedRiskEnginesProps> = ({ onApplicationCreated, currentUserEmail }) => {
+  const saveApplicationToBackend = async (data: any) => {
+    try {
+      const resp = await fetch('/api/v1/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (resp.ok && onApplicationCreated) {
+        onApplicationCreated();
+      }
+    } catch (e) {
+      console.error('Failed to save to backend:', e);
+    }
+  };
+
   const [activeSubModule, setActiveSubModule] = useState<'UNDERWRITING' | 'FRAUD_AML' | 'INSURANCE' | 'PORTFOLIO'>('UNDERWRITING');
 
   // =============================================================
@@ -41,6 +61,8 @@ export const SpecializedRiskEngines: React.FC = () => {
     propertyPurchasePrice: '650000',
     downPaymentAmount: '130000',
     loanProgram: 'CONVENTIONAL' as 'CONVENTIONAL' | 'FHA' | 'JUMBO' | 'VA',
+    ficoScore: '740',
+    liquidReserves: '45000',
   });
 
   const [uwSubmitted, setUwSubmitted] = useState({
@@ -52,6 +74,8 @@ export const SpecializedRiskEngines: React.FC = () => {
     propertyPurchasePrice: 650000,
     downPaymentAmount: 130000,
     loanProgram: 'CONVENTIONAL' as 'CONVENTIONAL' | 'FHA' | 'JUMBO' | 'VA',
+    ficoScore: 740,
+    liquidReserves: 45000,
     evaluatedAt: 'Initial Load',
   });
 
@@ -71,10 +95,32 @@ export const SpecializedRiskEngines: React.FC = () => {
         propertyPurchasePrice: Number(uwDraft.propertyPurchasePrice) || 0,
         downPaymentAmount: Number(uwDraft.downPaymentAmount) || 0,
         loanProgram: uwDraft.loanProgram,
+        ficoScore: Number(uwDraft.ficoScore) || 0,
+        liquidReserves: Number(uwDraft.liquidReserves) || 0,
         evaluatedAt: new Date().toLocaleTimeString(),
       });
       setUwCalculating(false);
       setUwSuccessBanner(true);
+      saveApplicationToBackend({
+        customer_name: 'Risk App (' + Date.now().toString().slice(-4) + ')',
+        email: currentUserEmail || 'risk@aegis.local',
+        phone: '+1-555-0000',
+        dob: '1990-01-01',
+        address: 'Internal',
+        product_type: 'MORTGAGE',
+        annual_income: Number(uwDraft.w2AnnualIncome),
+        monthly_expenses: Number(uwDraft.existingMonthlyDebt),
+        requested_credit_limit: Number(uwDraft.propertyPurchasePrice),
+        employment_status: 'EMPLOYED',
+        employer_name: 'Self',
+        credit_score: Number(uwDraft.ficoScore) || 720,
+        id_type: 'PASSPORT',
+        id_number: 'N/A',
+        scenario: 'LOW_RISK',
+        has_document_mismatch: false,
+        tamper_flags_detected: false,
+        pep_status: false,
+      });
       setTimeout(() => setUwSuccessBanner(false), 4000);
     }, 300);
   };
@@ -90,6 +136,10 @@ export const SpecializedRiskEngines: React.FC = () => {
   const meetsOccQmDtiLimit = backEndDti <= 43.0;
   const meetsLtvStandard = ltvRatio <= 80.0;
   const pmiRequired = ltvRatio > 80.0 && uwSubmitted.loanProgram !== 'VA';
+  const liquidReservesMonths = proposedHousingExpense > 0 ? (uwSubmitted.liquidReserves / proposedHousingExpense) : 0;
+  const baseDefaultProbability = Math.max(0.1, (850 - uwSubmitted.ficoScore) * 0.04 + (backEndDti * 0.15));
+  const adjustedPd = Math.max(0.1, baseDefaultProbability - (liquidReservesMonths * 0.3));
+  const expectedLossGivenDefault = (ltvRatio > 80 ? 0.45 : 0.25) * loanAmount;
 
   // =============================================================
   // 2. FRAUD DETECTION & SUB-SECOND AML STATE
@@ -102,6 +152,8 @@ export const SpecializedRiskEngines: React.FC = () => {
     entityBeneficiary: 'Al-Quds Mercantile Ltd (Overseas Wire)',
     destinationCountry: 'CY - Cyprus (High Velocity Offshore)',
     ofacScreeningResult: 'OFAC_SDN_MATCH' as 'CLEAR' | 'OFAC_SDN_MATCH' | 'PEP_WATCHLIST',
+    deviceRiskScore: '85',
+    networkHopsToSanctioned: '2',
   });
 
   const [fraudSubmitted, setFraudSubmitted] = useState({
@@ -112,6 +164,8 @@ export const SpecializedRiskEngines: React.FC = () => {
     entityBeneficiary: 'Al-Quds Mercantile Ltd (Overseas Wire)',
     destinationCountry: 'CY - Cyprus (High Velocity Offshore)',
     ofacScreeningResult: 'OFAC_SDN_MATCH' as 'CLEAR' | 'OFAC_SDN_MATCH' | 'PEP_WATCHLIST',
+    deviceRiskScore: 85,
+    networkHopsToSanctioned: 2,
     evaluatedAt: 'Initial Load',
   });
 
@@ -132,10 +186,32 @@ export const SpecializedRiskEngines: React.FC = () => {
         entityBeneficiary: fraudDraft.entityBeneficiary,
         destinationCountry: fraudDraft.destinationCountry,
         ofacScreeningResult: fraudDraft.ofacScreeningResult,
+        deviceRiskScore: Number(fraudDraft.deviceRiskScore) || 0,
+        networkHopsToSanctioned: Number(fraudDraft.networkHopsToSanctioned) || 0,
         evaluatedAt: new Date().toLocaleTimeString(),
       });
       setFraudCalculating(false);
       setFraudSuccessBanner(true);
+      saveApplicationToBackend({
+        customer_name: fraudDraft.entityBeneficiary,
+        email: currentUserEmail || 'fraud@aegis.local',
+        phone: '+1-555-0000',
+        dob: '1990-01-01',
+        address: fraudDraft.destinationCountry,
+        product_type: 'WIRE_TRANSFER',
+        annual_income: 0,
+        monthly_expenses: 0,
+        requested_credit_limit: Number(fraudDraft.transactionAmount),
+        employment_status: 'UNEMPLOYED',
+        employer_name: 'None',
+        credit_score: 500,
+        id_type: 'NATIONAL_ID',
+        id_number: 'N/A',
+        scenario: 'FRAUD_INDICATOR',
+        has_document_mismatch: false,
+        tamper_flags_detected: true,
+        pep_status: fraudDraft.ofacScreeningResult !== 'CLEAR',
+      });
       setTimeout(() => setFraudSuccessBanner(false), 4000);
     }, 300);
   };
@@ -145,6 +221,8 @@ export const SpecializedRiskEngines: React.FC = () => {
     : 0;
   const isZScoreAnomaly = zScore > 3.0;
   const isVelocityFlag = fraudSubmitted.txVelocity1Hour >= 5;
+  const compositeFraudScore = Math.min(100, (Math.max(0, zScore) * 15) + (fraudSubmitted.deviceRiskScore * 0.4) + (fraudSubmitted.networkHopsToSanctioned <= 3 ? 40 : 0));
+  const isHighRisk = compositeFraudScore > 75;
 
   const handleGenerateFinCenSar = () => {
     setGeneratingSar(true);
@@ -170,6 +248,8 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
     prevailingMarketLaborRate: '98',
     deductibleStatutory: '1000',
     policyCoverageCap: '50000',
+    bettermentDepreciationPct: '15',
+    historicalClaimFrequency3Yr: '2',
   });
 
   const [insSubmitted, setInsSubmitted] = useState({
@@ -179,6 +259,8 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
     prevailingMarketLaborRate: 98,
     deductibleStatutory: 1000,
     policyCoverageCap: 50000,
+    bettermentDepreciationPct: 15,
+    historicalClaimFrequency3Yr: 2,
     evaluatedAt: 'Initial Load',
   });
 
@@ -196,6 +278,8 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
         prevailingMarketLaborRate: Number(insDraft.prevailingMarketLaborRate) || 0,
         deductibleStatutory: Number(insDraft.deductibleStatutory) || 0,
         policyCoverageCap: Number(insDraft.policyCoverageCap) || 0,
+        bettermentDepreciationPct: Number(insDraft.bettermentDepreciationPct) || 0,
+        historicalClaimFrequency3Yr: Number(insDraft.historicalClaimFrequency3Yr) || 0,
         evaluatedAt: new Date().toLocaleTimeString(),
       });
       setInsCalculating(false);
@@ -211,10 +295,12 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
   const laborInflationPct = insSubmitted.prevailingMarketLaborRate > 0
     ? ((insSubmitted.laborRateBilledPerHour - insSubmitted.prevailingMarketLaborRate) / insSubmitted.prevailingMarketLaborRate) * 100
     : 0;
+  const bettermentDeduction = insSubmitted.claimedDamageAmount * (insSubmitted.bettermentDepreciationPct / 100);
   const auditedPayableAmount = Math.max(
     0,
-    Math.min(insSubmitted.policyCoverageCap, insSubmitted.policeReportEstimatedLoss + Math.max(0, estimateVariance * 0.4)) - insSubmitted.deductibleStatutory
+    Math.min(insSubmitted.policyCoverageCap, insSubmitted.policeReportEstimatedLoss + Math.max(0, estimateVariance * 0.4)) - insSubmitted.deductibleStatutory - bettermentDeduction
   );
+  const isHighFrequencyClaim = insSubmitted.historicalClaimFrequency3Yr > 2;
 
   // =============================================================
   // 4. PORTFOLIO RISK & BASEL III CET1 STATE
@@ -457,6 +543,26 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                 </div>
 
                 <div>
+                  <label className="block font-semibold text-slate-700 mb-1">FICO Score</label>
+                  <input
+                    type="number"
+                    value={uwDraft.ficoScore}
+                    onChange={(e) => setUwDraft({ ...uwDraft, ficoScore: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. 740"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Verified Liquid Reserves (₹)</label>
+                  <input
+                    type="number"
+                    value={uwDraft.liquidReserves}
+                    onChange={(e) => setUwDraft({ ...uwDraft, liquidReserves: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. 45000"
+                  />
+                </div>
+                <div>
                   <label className="block font-semibold text-slate-700 mb-1">Loan Program Type</label>
                   <select
                     value={uwDraft.loanProgram}
@@ -584,6 +690,14 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                   <span className="font-mono font-bold">{ltvRatio.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60">
+                  <span>Probability of Default (PD):</span>
+                  <span className="font-mono font-bold">{adjustedPd.toFixed(2)}%</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200/60">
+                  <span>Loss Given Default (LGD):</span>
+                  <span className="font-mono font-bold text-rose-600">{formatINR(expectedLossGivenDefault)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200/60">
                   <span>Private Mortgage Ins. (PMI):</span>
                   <span className="font-mono font-semibold">{pmiRequired ? 'Required (>80% LTV)' : 'Not Required'}</span>
                 </div>
@@ -709,6 +823,24 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                   />
                 </div>
 
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Device Fingerprint Risk (0-100)</label>
+                  <input
+                    type="number"
+                    value={fraudDraft.deviceRiskScore}
+                    onChange={(e) => setFraudDraft({ ...fraudDraft, deviceRiskScore: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Network Hops to Sanctioned Entity</label>
+                  <input
+                    type="number"
+                    value={fraudDraft.networkHopsToSanctioned}
+                    onChange={(e) => setFraudDraft({ ...fraudDraft, networkHopsToSanctioned: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">OFAC / Sanctions Screening Status</label>
                   <select
@@ -914,6 +1046,24 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                 </div>
 
                 <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Betterment Depreciation (%)</label>
+                  <input
+                    type="number"
+                    value={insDraft.bettermentDepreciationPct}
+                    onChange={(e) => setInsDraft({ ...insDraft, bettermentDepreciationPct: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Historical Claims (Last 3 Yrs)</label>
+                  <input
+                    type="number"
+                    value={insDraft.historicalClaimFrequency3Yr}
+                    onChange={(e) => setInsDraft({ ...insDraft, historicalClaimFrequency3Yr: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
                   <label className="block font-semibold text-slate-700 mb-1">Policy IDV / Maximum Coverage Limit (₹)</label>
                   <input
                     type="text"
@@ -997,6 +1147,10 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                   <span className="font-mono font-bold text-rose-600">-{formatINR(Math.round(estimateVariance * 0.6))}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span>Betterment Depreciation:</span>
+                  <span className="font-mono font-bold text-amber-600">-{formatINR(bettermentDeduction)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
                   <span>Compulsory Deductible:</span>
                   <span className="font-mono font-bold text-slate-900">-{formatINR(insSubmitted.deductibleStatutory)}</span>
                 </div>
@@ -1006,14 +1160,15 @@ Recommendation: Immediate freeze under Section 314(a) USA PATRIOT Act and FinCEN
                 </div>
               </div>
 
-              {estimateVariancePct > 25 && (
+              {(estimateVariancePct > 25 || isHighFrequencyClaim) && (
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px] space-y-1">
                   <div className="font-bold flex items-center space-x-1">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     <span>SIU Fraud Escalation Required</span>
                   </div>
                   <p className="text-[10px] leading-relaxed">
-                    Repair invoice contains {formatINR(estimateVariance)} in uncorroborated parts/labor not documented in police report.
+                    {estimateVariancePct > 25 ? `Repair invoice contains ${formatINR(estimateVariance)} in uncorroborated parts/labor. ` : ''}
+                    {isHighFrequencyClaim ? `Subject flagged for high claims velocity (${insSubmitted.historicalClaimFrequency3Yr} claims in 3 yrs).` : ''}
                   </p>
                 </div>
               )}

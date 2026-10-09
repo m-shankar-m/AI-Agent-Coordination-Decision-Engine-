@@ -508,9 +508,16 @@ def get_tools():
     return tools_output
 
 @app.post("/api/v1/workflows/start")
-def start_workflow(payload: Dict[str, Any]):
+async def start_workflow(payload: Dict[str, Any]):
     app_id = payload.get("application_id", "APP-2026-001")
-    return multi_agent_engine.start_workflow(app_id)
+    state = multi_agent_engine.start_workflow(app_id)
+    for app in SEED_APPLICATIONS:
+        if app["id"] == app_id:
+            app["workflow_id"] = state["workflow_id"]
+            app["status"] = "IN_PROGRESS"
+            await mongo.applications_col.update_one({"id": app_id}, {"$set": {"workflow_id": state["workflow_id"], "status": "IN_PROGRESS"}})
+            break
+    return state
 
 @app.get("/api/v1/workflows/{workflow_id}/stream")
 async def stream_workflow(workflow_id: str):
@@ -647,11 +654,28 @@ async def stream_workflow(workflow_id: str):
                 SEED_PENDING_REVIEWS.append(new_review)
                 await mongo.reviews_col.insert_one(new_review.copy())
                 
+                for app in SEED_APPLICATIONS:
+                    if app["id"] == state.get("application_id"):
+                        app["status"] = "REVIEW_REQUIRED"
+                        await mongo.applications_col.update_one({"id": app["id"]}, {"$set": {"status": "REVIEW_REQUIRED"}})
+                        break
+                
                 yield f"data: {json.dumps({'type': 'HUMAN_REVIEW_TRIGGERED', 'data': {'reason': review_reason}})}\n\n"
                 return
             
         await asyncio.sleep(0.05)
         state["workflow_status"] = "COMPLETED"
+        
+        final_status = "APPROVED"
+        if decision == "REJECTION_RECOMMENDATION":
+            final_status = "REJECTED"
+            
+        for app in SEED_APPLICATIONS:
+            if app["id"] == state.get("application_id"):
+                app["status"] = final_status
+                await mongo.applications_col.update_one({"id": app["id"]}, {"$set": {"status": final_status}})
+                break
+
         yield f"data: {json.dumps({'type': 'WORKFLOW_COMPLETED'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

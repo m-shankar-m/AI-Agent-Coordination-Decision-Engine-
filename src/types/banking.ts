@@ -1,4 +1,4 @@
-export type RBACRole = 'ADMIN' | 'OPERATIONS' | 'REVIEWER' | 'ANALYST' | 'VIEWER';
+export type RBACRole = 'ADMIN' | 'OPERATIONS' | 'REVIEWER' | 'ANALYST' | 'VIEWER' | 'USER';
 
 export type ProductType = 'PREMIUM_CHECKING' | 'BUSINESS_ACCOUNT' | 'SAVINGS_ACCOUNT' | 'CREDIT_LINE' | 'COMMERCIAL_LOAN';
 

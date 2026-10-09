@@ -11,6 +11,7 @@ interface HeaderProps {
   realtimeData?: RealtimeFinancialData | null;
   onRefreshData?: () => void;
   isStreaming?: boolean;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,17 +23,20 @@ export const Header: React.FC<HeaderProps> = ({
   realtimeData,
   onRefreshData,
   isStreaming,
+  onLogout,
 }) => {
-  const tabs = [
-    { id: 'workflows', label: 'Workflow & Agents' },
-    { id: 'applications', label: 'Applications & Custom Data' },
-    { id: 'risk_engines', label: 'Specialized Risk & Underwriting' },
-    { id: 'reviews', label: 'Human Review Queue', badge: pendingReviewCount },
-    { id: 'observability', label: 'Agent & Tool Matrix' },
-    { id: 'market_policy', label: 'Real-Time & Policies' },
-    { id: 'audit', label: 'Regulatory Audit Log' },
-    { id: 'api', label: 'REST API Specs' },
-  ];
+  const tabs = currentRole === 'ADMIN'
+    ? [
+        { id: 'reviews', label: 'Human Review Queue', badge: pendingReviewCount },
+        { id: 'audit', label: 'Regulatory Audit Log' },
+      ]
+    : [
+        { id: 'mystatus', label: 'My Status' },
+        { id: 'applications', label: 'Application' },
+        { id: 'workflows', label: 'Workflow & Agents' },
+        { id: 'risk_engines', label: 'Specialized Risk & Underwriting' },
+        { id: 'market_policy', label: 'Real-Time & Policies' },
+      ];
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-xs">
@@ -114,6 +118,12 @@ export const Header: React.FC<HeaderProps> = ({
                 <RefreshCw className="w-4 h-4" />
               </button>
             )}
+            <button
+              onClick={onLogout}
+              className="px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Play,
   FileCheck2,
@@ -38,6 +38,8 @@ interface ApplicationLauncherProps {
   isOutageActive: boolean;
   isLoading?: boolean;
   onApplicationCreated?: () => void;
+  currentUserEmail?: string;
+  currentUserName?: string;
 }
 
 export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
@@ -53,6 +55,8 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
   isOutageActive,
   isLoading,
   onApplicationCreated,
+  currentUserEmail,
+  currentUserName,
 }) => {
   const [filterScenario, setFilterScenario] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -60,8 +64,13 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
   const [modalMode, setModalMode] = useState<'FORM' | 'JSON'>('FORM');
 
   // Rich Custom Applicant Form State
-  const [formName, setFormName] = useState('Jane Doe');
-  const [formEmail, setFormEmail] = useState('jane.doe@example.com');
+  const [formName, setFormName] = useState(currentUserName || 'Jane Doe');
+  const [formEmail, setFormEmail] = useState(currentUserEmail || 'jane.doe@example.com');
+  
+  useEffect(() => {
+    if (currentUserName) setFormName(currentUserName);
+    if (currentUserEmail) setFormEmail(currentUserEmail);
+  }, [currentUserName, currentUserEmail]);
   const [formPhone, setFormPhone] = useState('+1-555-0199');
   const [formDob, setFormDob] = useState('1992-07-15');
   const [formAddress, setFormAddress] = useState('452 Innovation Blvd, Chicago, IL 60601');
@@ -86,8 +95,8 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
 
   const applyPreset = (preset: 'PRIME' | 'REVIEW' | 'FRAUD' | 'BLANK') => {
     if (preset === 'PRIME') {
-      setFormName('Elena Rostova');
-      setFormEmail('elena.rostova@techcorp.synthetic');
+      setFormName(currentUserName || 'Elena Rostova');
+      setFormEmail(currentUserEmail || 'elena.rostova@techcorp.synthetic');
       setFormPhone('+1-555-0142');
       setFormDob('1988-03-22');
       setFormAddress('450 Market Street, San Francisco, CA');
@@ -105,8 +114,8 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       setFormTamperDetected(false);
       setFormPepStatus(false);
     } else if (preset === 'REVIEW') {
-      setFormName('Marcus Vance');
-      setFormEmail('marcus.vance@freelance.synthetic');
+      setFormName(currentUserName || 'Marcus Vance');
+      setFormEmail(currentUserEmail || 'marcus.vance@freelance.synthetic');
       setFormPhone('+1-555-0189');
       setFormDob('1991-09-14');
       setFormAddress('812 Elm Avenue, Austin, TX');
@@ -124,8 +133,8 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       setFormTamperDetected(false);
       setFormPepStatus(false);
     } else if (preset === 'FRAUD') {
-      setFormName('Alex Chen');
-      setFormEmail('alex.chen@temp-mail.synthetic');
+      setFormName(currentUserName || 'Alex Chen');
+      setFormEmail(currentUserEmail || 'alex.chen@temp-mail.synthetic');
       setFormPhone('+1-555-0199');
       setFormDob('1995-12-01');
       setFormAddress('99 Unknown Way, Miami, FL');
@@ -219,7 +228,7 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
       } else {
         payload = {
           customer_name: formName,
-          email: formEmail,
+          email: formEmail || currentUserEmail || 'applicant@aegis.local',
           phone: formPhone,
           dob: formDob,
           address: formAddress,
@@ -264,365 +273,9 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 4 Demonstration Scenarios Quick-Launch Grid */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Demonstration Scenarios
-            </h3>
-            <p className="text-xs text-slate-500">
-              
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              id="bulk-seed-btn"
-              onClick={() => onBulkSeed(1000)}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center space-x-1"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>Generate 1,000+ Records</span>
-            </button>
-            <button
-              id="create-app-btn"
-              onClick={() => setShowCreateModal(true)}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center space-x-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Custom Applicant</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Scenario 1 */}
-          <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                  SCENARIO 1
-                </span>
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Normal Low-Risk Approval</h4>
-              <p className="text-xs text-slate-600 mb-3">
-                
-              </p>
-            </div>
-            <button
-              id="btn-scenario-1"
-              onClick={() => {
-                const target = applications.find((a) => a.id === 'APP-2026-001') || applications.find((a) => a.scenario === 'LOW_RISK' && a.is_synthetic) || applications.find((a) => a.scenario === 'LOW_RISK') || applications[0];
-                if (target) {
-                  onSelectApplication(target.id);
-                  onLaunchWorkflow(target.id);
-                }
-              }}
-              className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1"
-            >
-              <Play className="w-3.5 h-3.5" />
-              <span>Launch Scenario 1</span>
-            </button>
-          </div>
-
-          {/* Scenario 2 */}
-          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/40 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                  SCENARIO 2
-                </span>
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Document Discrepancy & Review</h4>
-              <p className="text-xs text-slate-600 mb-3">
-                
-              </p>
-            </div>
-            <button
-              id="btn-scenario-2"
-              onClick={() => {
-                const target = applications.find((a) => a.id === 'APP-2026-002') || applications.find((a) => a.scenario === 'DOCUMENT_MISMATCH' && a.is_synthetic) || applications.find((a) => a.scenario === 'DOCUMENT_MISMATCH') || applications[1];
-                if (target) {
-                  onSelectApplication(target.id);
-                  onLaunchWorkflow(target.id);
-                }
-              }}
-              className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1"
-            >
-              <Play className="w-3.5 h-3.5" />
-              <span>Launch Scenario 2</span>
-            </button>
-          </div>
-
-          {/* Scenario 3 */}
-          <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/40 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
-                  SCENARIO 3
-                </span>
-                <ShieldAlert className="w-4 h-4 text-rose-600" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Suspicious / Tampered Fraud</h4>
-              <p className="text-xs text-slate-600 mb-3">
-                
-              </p>
-            </div>
-            <button
-              id="btn-scenario-3"
-              onClick={() => {
-                const target = applications.find((a) => a.id === 'APP-2026-003') || applications.find((a) => a.scenario === 'FRAUD_INDICATOR' && a.is_synthetic) || applications.find((a) => a.scenario === 'FRAUD_INDICATOR') || applications[2];
-                if (target) {
-                  onSelectApplication(target.id);
-                  onLaunchWorkflow(target.id);
-                }
-              }}
-              className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1"
-            >
-              <Play className="w-3.5 h-3.5" />
-              <span>Launch Scenario 3</span>
-            </button>
-          </div>
-
-          {/* Scenario 4 */}
-          <div
-            className={`p-4 rounded-xl border flex flex-col justify-between ${
-              isOutageActive
-                ? 'border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-500'
-                : 'border-slate-200 bg-slate-50/70'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-800">
-                  SCENARIO 4
-                </span>
-                <ServerCrash className={`w-4 h-4 ${isOutageActive ? 'text-indigo-600' : 'text-slate-500'}`} />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">API Outage & Fallback Recovery</h4>
-              <p className="text-xs text-slate-600 mb-3">
-                
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <button
-                id="btn-scenario-4-toggle"
-                onClick={() => onSimulateOutageToggle(!isOutageActive)}
-                className={`w-full py-1.5 text-xs font-semibold rounded-lg transition border ${
-                  isOutageActive
-                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
-                }`}
-              >
-                {isOutageActive ? 'Simulated Outage: ACTIVE' : 'Toggle Live Outage'}
-              </button>
-              <button
-                id="btn-scenario-4"
-                onClick={() => {
-                  const target = applications[0];
-                  if (target) {
-                    onSelectApplication(target.id);
-                    onLaunchWorkflow(target.id);
-                  }
-                }}
-                className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1"
-              >
-                <Play className="w-3 h-3" />
-                <span>Run with Outage Test</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Custom Data Entry Explainer Callout */}
-      <div className="bg-linear-to-r from-indigo-50/80 via-white to-slate-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-start space-x-3">
-          <div className="p-2 bg-indigo-600 text-white rounded-lg shrink-0 mt-0.5">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-900">custom data</h4>
-            <p className="text-xs text-slate-600 mt-0.5">
-              
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2 shrink-0">
-          <button
-            id="btn-open-custom-studio"
-            onClick={() => setShowCreateModal(true)}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center space-x-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Enter Your Data</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Applications Directory & Management Table */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Synthetic Banking Applications Registry ({totalApplications.toLocaleString()})
-            </h3>
-            <span className="text-[11px] text-slate-500">
-              
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            {/* Filter */}
-            <select
-              id="filter-scenario"
-              value={filterScenario}
-              onChange={(e) => setFilterScenario(e.target.value)}
-              className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-700 font-medium focus:outline-none"
-            >
-              <option value="ALL">All Risk Tiers</option>
-              <option value="LOW_RISK">Low Risk</option>
-              <option value="DOCUMENT_MISMATCH">Medium Risk (Mismatch)</option>
-              <option value="HIGH_RISK">High Risk</option>
-              <option value="FRAUD_INDICATOR">Fraud Suspect</option>
-            </select>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              <input
-                id="search-applications"
-                type="text"
-                placeholder="Search applicant or ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-semibold border-y border-slate-200">
-              <tr>
-                <th className="py-2.5 px-3">Application ID</th>
-                <th className="py-2.5 px-3">Applicant Name</th>
-                <th className="py-2.5 px-3">Product</th>
-                <th className="py-2.5 px-3">Risk Scenario</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3">Workflow ID</th>
-                <th className="py-2.5 px-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredApps.map((app) => {
-                const isSelected = selectedApplicationId === app.id;
-                return (
-                  <tr
-                    key={app.id}
-                    id={`app-row-${app.id}`}
-                    onClick={() => onSelectApplication(app.id)}
-                    className={`cursor-pointer hover:bg-slate-50/80 transition ${
-                      isSelected ? 'bg-indigo-50/30' : ''
-                    }`}
-                  >
-                    <td className="py-2.5 px-3 font-mono font-medium text-indigo-600">
-                      {app.id}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-slate-900">
-                      {app.customer_name}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600">
-                      {app.product_type.replace(/_/g, ' ')}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          app.scenario === 'LOW_RISK'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : app.scenario === 'DOCUMENT_MISMATCH' || app.scenario === 'MEDIUM_RISK'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}
-                      >
-                        {app.scenario}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                          app.status === 'APPROVED'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : app.status === 'REJECTED'
-                            ? 'bg-rose-100 text-rose-800'
-                            : app.status === 'REVIEW_REQUIRED'
-                            ? 'bg-amber-100 text-amber-800'
-                            : app.status === 'IN_PROGRESS'
-                            ? 'bg-indigo-100 text-indigo-800 animate-pulse'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">
-                      {app.workflow_id || 'Not Executed'}
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <button
-                        id={`btn-run-${app.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectApplication(app.id);
-                          onLaunchWorkflow(app.id);
-                        }}
-                        className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-medium transition inline-flex items-center space-x-1"
-                      >
-                        <Play className="w-3 h-3" />
-                        <span>Run Agents</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Bar */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-          <span>
-            Showing page {currentPage} of {Math.max(1, Math.ceil(totalApplications / 20))}
-          </span>
-          <div className="flex items-center space-x-2">
-            <button
-              id="prev-page-btn"
-              disabled={currentPage <= 1}
-              onClick={() => onPageChange(currentPage - 1)}
-              className="px-2.5 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              id="next-page-btn"
-              disabled={currentPage >= Math.ceil(totalApplications / 20)}
-              onClick={() => onPageChange(currentPage + 1)}
-              className="px-2.5 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Custom Applicant & Data Ingestion Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 my-auto max-h-[92vh] flex flex-col">
+      
+        <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-sm border border-slate-200 mx-auto flex flex-col">
             {/* Modal Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div>
@@ -630,19 +283,13 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
                   <div className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg">
                     <Sliders className="w-5 h-5" />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900">Custom Applicant &amp; Data Ingestion Studio</h3>
+                  <h3 className="text-base font-bold text-slate-900">Application &amp; Data Ingestion Form</h3>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
                   Enter your own custom customer profile, financials, credit score, and verification documents to evaluate through the autonomous 8-agent decision engine.
                 </p>
               </div>
-              <button
-                id="btn-close-modal"
-                onClick={() => setShowCreateModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              
             </div>
 
             {/* Mode Switcher & Presets */}
@@ -1067,7 +714,5 @@ export const ApplicationLauncher: React.FC<ApplicationLauncherProps> = ({
             </div>
           </div>
         </div>
-      )}
-    </div>
   );
 };

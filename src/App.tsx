@@ -13,6 +13,8 @@ import { PolicyAndMarketHub } from './components/PolicyAndMarketHub.js';
 import { AuditLogExplorer } from './components/AuditLogExplorer.js';
 import { ApiDocumentation } from './components/ApiDocumentation.js';
 import { SpecializedRiskEngines } from './components/SpecializedRiskEngines.js';
+import { MyStatus } from './components/MyStatus.js';
+import { AuthScreen } from './components/AuthScreen.js';
 import {
   FALLBACK_AGENTS,
   FALLBACK_TOOLS,
@@ -31,8 +33,11 @@ import {
 } from './types/banking.js';
 
 export default function App() {
-  const [currentRole, setCurrentRole] = useState<RBACRole>('ADMIN');
-  const [activeTab, setActiveTab] = useState<string>('workflows');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('auth') === 'true');
+  const [currentUserEmail, setCurrentUserEmail] = useState(() => localStorage.getItem('email') || '');
+  const [currentUserName, setCurrentUserName] = useState(() => localStorage.getItem('name') || '');
+  const [currentRole, setCurrentRole] = useState<RBACRole>(() => (localStorage.getItem('role') as RBACRole) || 'USER');
+  const [activeTab, setActiveTab] = useState<string>('mystatus');
 
   // Application & Workflow State
   const [applications, setApplications] = useState<ApplicationRecord[]>(FALLBACK_APPLICATIONS);
@@ -133,6 +138,7 @@ export default function App() {
     fetchRealtimeMarketData();
 
     const interval = setInterval(() => {
+      fetchApplications(currentPage);
       fetchReviews();
       fetchAgentsAndTools();
     }, 8000);
@@ -295,6 +301,42 @@ export default function App() {
     }
   };
 
+  const handleLogin = (role: RBACRole, email: string, name: string) => {
+    setCurrentRole(role);
+    setCurrentUserEmail(email);
+    setCurrentUserName(name);
+    setIsAuthenticated(true);
+    localStorage.setItem('role', role);
+    localStorage.setItem('email', email);
+    localStorage.setItem('name', name);
+    localStorage.setItem('auth', 'true');
+    setActiveTab(role === 'ADMIN' ? 'reviews' : 'applications');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentRole('USER');
+    setCurrentUserEmail('');
+    setCurrentUserName('');
+    localStorage.removeItem('role');
+    localStorage.removeItem('email');
+    localStorage.removeItem('name');
+    localStorage.removeItem('auth');
+  };
+
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={handleLogin} />;
+  }
+
+  // Filter applications by current user if they are not an ADMIN
+  const userApplications = currentRole === 'ADMIN' 
+    ? applications 
+    : applications.filter(app => app.customer_email === currentUserEmail);
+
+  const userTotalApplications = currentRole === 'ADMIN'
+    ? totalApplications
+    : userApplications.length;
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Header */}
@@ -312,6 +354,7 @@ export default function App() {
           fetchRealtimeMarketData();
         }}
         isStreaming={isStreaming}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -329,10 +372,27 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'mystatus' && (
+          <MyStatus
+            applications={userApplications}
+            totalApplications={userTotalApplications}
+            onRefreshData={fetchApplications}
+            onNavigateToApply={() => setActiveTab('applications')}
+            onLaunchWorkflow={(id) => {
+              setSelectedAppId(id);
+              setActiveTab('workflows');
+            }}
+            onSelectApplication={setSelectedAppId}
+            selectedApplicationId={selectedAppId}
+          />
+        )}
+
         {activeTab === 'applications' && (
           <ApplicationLauncher
-            applications={applications}
-            totalApplications={totalApplications}
+            currentUserName={currentUserName}
+            currentUserEmail={currentUserEmail}
+            applications={userApplications}
+            totalApplications={userTotalApplications}
             currentPage={currentPage}
             onPageChange={(p) => {
               setCurrentPage(p);
@@ -349,7 +409,7 @@ export default function App() {
         )}
 
         {activeTab === 'risk_engines' && (
-          <SpecializedRiskEngines />
+          <SpecializedRiskEngines currentUserEmail={currentUserEmail} onApplicationCreated={fetchApplications} />
         )}
 
         {activeTab === 'reviews' && (
